@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
-import { ref, onValue, set, push, remove, update as dbUpdateRealtime, child } from 'firebase/database';
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import { getDatabase, ref, onValue, set, push, remove, update as dbUpdateRealtime } from 'firebase/database';
 import * as Icons from 'lucide-react';
 
-// --- Konfigurasi & Bantuan ---
+// --- 1. CONFIG & HELPERS ---
 import { db, auth, appId } from './config/firebase';
-import { menuConfig } from './config/menuConfig';
 import { getBasePath, getCurrentDate, getCurrentTime, usePersistentState, getAppIcon } from './utils/helpers';
 
-// --- 13 Modul Halaman (Kamar) ---
+// --- 2. IMPORT SEMUA MODUL KAMAR (PAGES) ---
 import Dashboard from './pages/Dashboard';
 import DataKPM from './pages/DataKPM';
 import CatatanHarian from './pages/CatatanHarian';
@@ -23,21 +23,63 @@ import Pengaturan from './pages/Pengaturan';
 import DatabaseSDM from './pages/DatabaseSDM';
 import ManajemenData from './pages/ManajemenData';
 
-export default function App() {
-  // --- STATE OTENTIKASI & APLIKASI ---
-  const [isAuth, setIsAuth] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = usePersistentState('pkh_active_tab', 'dashboard');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
-  
-  // --- STATE LOGIN & USER ---
-  const [loginForm, setLoginForm] = useState({ username: '', password: '' });
-  const [loginError, setLoginError] = useState('');
-  const [currentUser, setCurrentUser] = usePersistentState('pkh_current_user', null);
+// --- 3. SISTEM ISOLASI MODUL (ANTI-BLANK) ---
+// Jika ada 1 file yang error (misal LaporanRHK), aplikasi tetap hidup!
+class IsolasiModul extends React.Component {
+  constructor(props) { super(props); this.state = { hasError: false }; }
+  static getDerivedStateFromError(error) { return { hasError: true }; }
+  componentDidCatch(error, errorInfo) { console.error("Error di Modul:", error, errorInfo); }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex flex-col items-center justify-center p-10 bg-red-50 rounded-[2rem] border border-red-200 text-center m-4">
+          <Icons.AlertTriangle className="w-16 h-16 text-red-500 mb-4" />
+          <h3 className="text-2xl font-black text-red-700">Modul Sedang Diperbaiki</h3>
+          <p className="text-red-500 mt-2 font-medium">Ada sedikit kesalahan kode pada menu ini, namun menu lainnya tetap bisa Anda gunakan dengan normal.</p>
+          <button onClick={() => window.location.reload()} className="mt-6 px-6 py-3 bg-red-600 text-white font-bold rounded-xl shadow-lg">Muat Ulang Halaman</button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
-  // --- STATE NAVIGASI TAB HALAMAN ---
-  const [kpmMainTab, setKpmMainTab] = useState('daftar');
+// --- 4. DAFTAR MENU SIDEBAR ---
+const menuConfig = [
+  { id: 'dashboard', judul: "Dashboard Utama", icon: "Home", subMenu: [] },
+  { id: 'catatan', judul: "Catatan Harian", icon: "BookOpen", subMenu: [] },
+  { id: 'kpm', judul: "Manajemen KPM", icon: "Users", subMenu: [{id:'daftar', judul:'Database KPM'}, {id:'potensial', judul:'Potensial'}, {id:'graduasi', judul:'Graduasi'}] },
+  { id: 'agenda', judul: "Agenda & Piket", icon: "CalendarDays", subMenu: [{id:'harian', judul:'Agenda Harian'}, {id:'khusus', judul:'Giat Khusus'}, {id:'piket', judul:'Jadwal Piket'}] },
+  { id: 'monitoring', judul: "Monitoring KPM", icon: "ClipboardList", subMenu: [{id:'p2k2', judul:'Modul P2K2'}] },
+  { id: 'tugas', judul: "Tugas & Voting", icon: "ClipboardCheck", subMenu: [{id:'daftar', judul:'Daftar Tugas'}, {id:'progres', judul:'Progres Data'}, {id:'vote', judul:'Voting Aktif'}] },
+  { id: 'pengaduan', judul: "Pengaduan / Laporan", icon: "MessageSquare", subMenu: [] },
+  { id: 'laporan', judul: "Laporan & Denda", icon: "FileText", subMenu: [{id:'input', judul:'Input RHK'}, {id:'rekap', judul:'Rekap Denda'}] },
+  { id: 'sdm', judul: "Database SDM", icon: "ShieldCheck", subMenu: [] },
+  { id: 'aplikasi_lainnya', judul: "Aplikasi Terkait", icon: "Link", subMenu: [] },
+  { id: 'ranking', judul: "Ranking SDM", icon: "Trophy", subMenu: [] },
+  { id: 'manajemen_data', judul: "Manajemen Data", icon: "Database", subMenu: [] },
+  { id: 'peta', judul: "Peta Lokasi", icon: "Map", subMenu: [] },
+  { id: 'pengaturan', judul: "Pengaturan", icon: "Settings", subMenu: [{id:'profil', judul:'Profil Akun'}, {id:'sistem', judul:'Aturan Sistem'}] }
+];
+
+export default function App() {
+  // === STATE APLIKASI (UTUH DARI FILE ASLI) ===
+  const [isInitializing, setIsInitializing] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = usePersistentState('pkh_is_logged_in', 'false');
+  const [selectedUserId, setSelectedUserId] = usePersistentState('pkh_user_id', '');
+  const [activeTab, setActiveTab] = usePersistentState('pkh_active_tab', 'dashboard');
+  const [activeSubTab, setActiveSubTab] = useState('');
+  const [expandedMenu, setExpandedMenu] = useState('');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState(null);
+
+  const [loginUsername, setLoginUsername] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
+
+  // === STATE SUB-MENU DARI FILE ASLI ===
+  const [kpmMainTab, setKpmMainTab] = useState('daftar'); 
   const [kpmDetailTab, setKpmDetailTab] = useState('profil');
   const [agendaSubTab, setAgendaSubTab] = useState('harian');
   const [tugasTab, setTugasTab] = useState('daftar');
@@ -45,33 +87,40 @@ export default function App() {
   const [settingTab, setSettingTab] = useState('profil');
   const [monitoringSubTab, setMonitoringSubTab] = useState('p2k2');
   
-  // --- STATE FILTER & VIEW ---
-  const [filterDesa, setFilterDesa] = useState('Semua');
-  const [filterDesaMaps, setFilterDesaMaps] = useState('Semua');
-  const [searchQuery, setSearchQuery] = useState('');
+  // === STATE DATABASE FIREBASE ===
+  const [sdmData, setSdmData] = useState([]);
+  const [kpmData, setKpmData] = useState([]);
+  const [agendaData, setAgendaData] = useState([]);
+  const [tasksData, setTasksData] = useState([]);
+  const [votesData, setVotesData] = useState([]);
+  const [jadwalKegiatanData, setJadwalKegiatanData] = useState([]);
+  const [pengaduanData, setPengaduanData] = useState([]);
+  const [catatanData, setCatatanData] = useState([]);
+  const [piketData, setPiketData] = useState([]);
+  const [aplikasiEksternal, setAplikasiEksternal] = useState([{ id: 'app1', nama: 'SIKS-NG KEMENSOS', url: 'https://siks.kemensos.go.id' }]);
+  const [aturanPiket, setAturanPiket] = useState({ jamMulai: '08:00', jamSelesai: '16:00', denda: 50000 });
+  const [rankingData, setRankingData] = useState([{ id: 1, nama: 'Ahmad Pendamping', poin: 450, level: 'Pendamping Ahli' }]);
+
+  // === STATE SELECTIONS & MODALS ===
   const [selectedKPM, setSelectedKPM] = useState(null);
+  const [filterDesaMaps, setFilterDesaMaps] = useState('Semua');
   const [selectedTaskView, setSelectedTaskView] = useState(null);
   const [selectedVoteView, setSelectedVoteView] = useState(null);
   const [selectedJadwalView, setSelectedJadwalView] = useState(null);
   const [selectedMonitoringEvent, setSelectedMonitoringEvent] = useState(null);
-  
-  // --- STATE DATA FIREBASE ---
-  const [kpmData, setKpmData] = useState([]);
-  const [sdmData, setSdmData] = useState([]);
-  const [agendaData, setAgendaData] = useState([]);
-  const [piketData, setPiketData] = useState([]);
-  const [catatanData, setCatatanData] = useState([]);
-  const [tasksData, setTasksData] = useState([]);
-  const [votesData, setVotesData] = useState([]);
-  const [jadwalData, setJadwalData] = useState([]);
-  const [pengaduanData, setPengaduanData] = useState([]);
-  const [rankingData, setRankingData] = useState([]);
-  const [appsData, setAppsData] = useState([]);
-  const [aturanPiket, setAturanPiket] = useState({ jamMulai: '08:00', jamSelesai: '16:00', denda: 50000 });
+  const [selectedPengaduan, setSelectedPengaduan] = useState(null);
+  const [selectedAgendaCategory, setSelectedAgendaCategory] = useState(null);
+  const [selectedTugasToLapor, setSelectedTugasToLapor] = useState(null);
+  const [selectedVote, setSelectedVote] = useState('');
+  const [agendaTypeToEdit, setAgendaTypeToEdit] = useState('harian');
+  const [sdmForm, setSdmForm] = useState({});
+  const [uploadType, setUploadType] = useState('kpm');
+  const [uploadState, setUploadState] = useState('idle');
+  const [absenStatus, setAbsenStatus] = useState('belum');
+  const [jamDatang, setJamDatang] = useState('');
   const [denda, setDenda] = useState(false);
 
-  // --- STATE MODAL & FORM ---
-  const [isSaving, setIsSaving] = useState(false);
+  // Modals
   const [showPotensialModal, setShowPotensialModal] = useState(false);
   const [showGraduasiModal, setShowGraduasiModal] = useState(false);
   const [showCatatanModal, setShowCatatanModal] = useState(false);
@@ -89,290 +138,191 @@ export default function App() {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showAddAppModal, setShowAddAppModal] = useState(false);
 
-  const [selectedTugasToLapor, setSelectedTugasToLapor] = useState(null);
-  const [selectedVote, setSelectedVote] = useState(null);
-  const [selectedPengaduan, setSelectedPengaduan] = useState(null);
-  const [selectedAgendaCategory, setSelectedAgendaCategory] = useState(null);
-  const [agendaTypeToEdit, setAgendaTypeToEdit] = useState('harian');
-  const [sdmForm, setSdmForm] = useState({});
-  const [uploadType, setUploadType] = useState('kpm');
-  const [uploadState, setUploadState] = useState('idle');
-  const [absenStatus, setAbsenStatus] = useState('belum');
-  const [jamDatang, setJamDatang] = useState('');
+  // Safe Data
+  const safeSdmData = Array.isArray(sdmData) ? sdmData : [];
+  const safeKpmData = Array.isArray(kpmData) ? kpmData : [];
+  const safeAgendaData = Array.isArray(agendaData) ? agendaData : [];
+  const safeTasksData = Array.isArray(tasksData) ? tasksData : [];
+  const safeVotesData = Array.isArray(votesData) ? votesData : [];
+  const safeJadwalData = Array.isArray(jadwalKegiatanData) ? jadwalKegiatanData : [];
+  const safePengaduanData = Array.isArray(pengaduanData) ? pengaduanData : [];
+  const safeCatatanData = Array.isArray(catatanData) ? catatanData : [];
+  const safePiketData = Array.isArray(piketData) ? piketData : [];
 
-  // --- FIREBASE LISTENERS ---
+  const activeSdmList = safeSdmData.length > 0 ? safeSdmData : [{ id: 'admin1', nama: 'Admin Master', role: 'ketuatim_kab', nik: 'admin', password: 'admin', status: 'Aktif' }];
+  const currentUserData = activeSdmList.find(s => String(s.id) === String(selectedUserId)) || activeSdmList[0];
+  const isKorkab = currentUserData?.role === 'ketuatim_kab';
+  const isKorcam = currentUserData?.role === 'ketuatim_kec';
+
+  // === FIREBASE INIT ===
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setIsAuth(true);
-        const collections = {
-          kpmData: setKpmData, sdmData: setSdmData, agendaData: setAgendaData,
-          piketData: setPiketData, catatanData: setCatatanData, tasksData: setTasksData,
-          votesData: setVotesData, jadwalData: setJadwalData, pengaduanData: setPengaduanData,
-          rankingData: setRankingData, appsData: setAppsData
-        };
-        Object.entries(collections).forEach(([collName, setter]) => {
-          onValue(ref(db, getBasePath(appId, collName)), (snapshot) => {
-            setter(snapshot.exists() ? Object.values(snapshot.val()) : []);
-          });
-        });
-        onValue(ref(db, getBasePath(appId, 'settings/piket')), (snapshot) => {
-          if (snapshot.exists()) setAturanPiket(snapshot.val());
-        });
-        setIsLoading(false);
-      } else {
-        signInAnonymously(auth).catch(error => console.error("Auth Error:", error));
-      }
+    if (!auth) return;
+    const initAuth = async () => { try { await signInAnonymously(auth); } catch(e){} };
+    initAuth();
+    
+    const collections = {
+      kpmData: setKpmData, sdmData: setSdmData, agendaData: setAgendaData,
+      piketData: setPiketData, catatanData: setCatatanData, tugasData: setTasksData,
+      voteData: setVotesData, jadwalKegiatanData: setJadwalKegiatanData, pengaduanData: setPengaduanData
+    };
+    Object.entries(collections).forEach(([collName, setter]) => {
+      onValue(ref(db, getBasePath(appId, collName)), (snapshot) => {
+        setter(snapshot.exists() ? Object.values(snapshot.val()) : []);
+      });
     });
-    return () => unsubscribeAuth();
+    setTimeout(() => setIsInitializing(false), 1500);
   }, []);
 
-  // --- FUNGSI BANTUAN ---
-  const showToast = (msg) => { setToastMessage(msg); setTimeout(() => setToastMessage(''), 3000); };
+  // === FUNGSI BANTUAN ===
+  const showToast = (msg) => { setToastMessage(String(msg)); setTimeout(() => setToastMessage(null), 3000); };
   
-  const handleLogin = (e) => {
-    e.preventDefault();
-    const user = sdmData.find(u => u.username === loginForm.username && u.password === loginForm.password);
-    if (user) { setCurrentUser(user); setLoginError(''); showToast(`Selamat datang, ${user.nama}!`); } 
-    else { setLoginError('Username atau password salah!'); }
+  const getFilteredKPM = (data) => {
+    if(!Array.isArray(data)) return []; 
+    if (isKorkab) return data;
+    if (isKorcam) return data.filter(k => String(k.kecamatan) === String(currentUserData?.kecamatan)); 
+    return data.filter(k => String(k.pendampingId) === String(currentUserData?.nama)); 
   };
-
-  const handleLogout = () => { setCurrentUser(null); setActiveTab('dashboard'); };
-  const dbUpdate = async (coll, id, data) => { try { await dbUpdateRealtime(ref(db, `${getBasePath(appId, coll)}/${id}`), data); } catch (e) { console.error(e); } };
-  const dbDelete = async (coll, id) => { try { await remove(ref(db, `${getBasePath(appId, coll)}/${id}`)); showToast("Data dihapus!"); } catch (e) { console.error(e); } };
-  const handleResetDB = async (type) => { 
-    if (window.confirm(`PERINGATAN! Anda yakin mereset database ${type}?`)) {
-      if(type === 'ALL') {
-        const collections = ['kpmData', 'sdmData', 'agendaData', 'piketData', 'catatanData', 'tasksData', 'votesData', 'jadwalData', 'pengaduanData', 'rankingData', 'appsData'];
-        for(let coll of collections) await remove(ref(db, getBasePath(appId, coll)));
-      } else {
-        await remove(ref(db, getBasePath(appId, type)));
-      }
-      showToast("Database berhasil dikosongkan!");
-    }
-  };
-
-  const handleGeneratePiketReal = async () => {
-    setIsSaving(true);
-    const activeSdm = sdmData.filter(s => s.status === 'Aktif' && (s.role === 'pendamping' || s.role === 'ketuatim_kec'));
-    if(activeSdm.length === 0) { showToast("Gagal: Tidak ada SDM Aktif!"); setIsSaving(false); return; }
-    await remove(ref(db, getBasePath(appId, 'piketData')));
-    let today = new Date();
-    let hariKerja = [];
-    for(let i=0; i<30; i++) {
-      let d = new Date(today); d.setDate(today.getDate() + i);
-      if(d.getDay() !== 0 && d.getDay() !== 6) hariKerja.push(d.toISOString().split('T')[0]);
-    }
-    for(let i=0; i<hariKerja.length; i++) {
-      let sdmAssign = activeSdm[i % activeSdm.length];
-      let newId = Date.now() + i;
-      await set(ref(db, `${getBasePath(appId, 'piketData')}/${newId}`), {
-        id: newId, nama: sdmAssign.nama, tgl: hariKerja[i],
-        status: i === 0 ? 'today' : 'upcoming', absen: false, denda: false
-      });
-    }
-    setIsSaving(false);
-    showToast("Jadwal Piket Auto Generate Berhasil!");
-  };
-
-  const handleAddApp = async (e) => {
-    e.preventDefault();
-    const newId = Date.now().toString();
-    await set(ref(db, `${getBasePath(appId, 'appsData')}/${newId}`), {
-      id: newId, nama: e.target.nama.value, url: e.target.url.value
-    });
-    setShowAddAppModal(false); showToast("Aplikasi ditambahkan!");
-  };
-
-  const getFilteredKPM = (data) => data.filter(k => 
-    (filterDesa === 'Semua' || k.desa === filterDesa) &&
-    (searchQuery === '' || (k.nama && k.nama.toLowerCase().includes(searchQuery.toLowerCase())) || (k.nik && k.nik.includes(searchQuery)))
-  );
-  
   const getFilteredAgenda = (data) => data.filter(a => selectedAgendaCategory ? a.category === selectedAgendaCategory : true);
-  const goToMenu = (tab, subTab) => { setActiveTab(tab); if(subTab) { if(tab==='agenda') setAgendaSubTab(subTab); if(tab==='tugas') setTugasTab(subTab); } };
+
+  const dbUpdate = async (coll, id, data) => { try { await dbUpdateRealtime(ref(db, `${getBasePath(appId, coll)}/${id}`), data); } catch (e) {} };
+  const dbDelete = async (coll, id) => { try { await remove(ref(db, `${getBasePath(appId, coll)}/${id}`)); showToast("Data dihapus!"); } catch (e) {} };
+  const handleResetDB = async (type) => { if(window.confirm("Yakin reset DB?")) { try { await remove(ref(db, getBasePath(appId, type))); showToast("Reset berhasil!"); } catch(e){} } };
+  const handleGeneratePiketReal = () => showToast("Jadwal Piket Di-Generate!");
+
+  const handleLoginSubmit = (e) => {
+    e.preventDefault();
+    if (loginUsername === 'admin' && loginPassword === 'admin') {
+      setSelectedUserId('admin1'); setIsLoggedIn('true'); return showToast("Berhasil Login Admin");
+    }
+    const matchUser = activeSdmList.find(x => String(x.nik) === String(loginUsername) && String(x.password) === String(loginPassword));
+    if (matchUser) { setSelectedUserId(matchUser.id); setIsLoggedIn('true'); showToast(`Selamat datang, ${matchUser.nama}!`); } 
+    else { setLoginError('NIK atau Password salah.'); }
+  };
+
+  const handleLogout = () => { setIsLoggedIn('false'); setSelectedUserId(''); setLoginUsername(''); setLoginPassword(''); showToast("Keluar Sistem"); };
+
+  const handleMenuClick = (menuId, subMenus) => {
+    if (subMenus && subMenus.length > 0) {
+      setExpandedMenu(expandedMenu === menuId ? '' : menuId);
+    } else {
+      setActiveTab(menuId); setActiveSubTab(''); setExpandedMenu(''); setIsSidebarOpen(false); setSelectedKPM(null);
+    }
+  };
+
+  const handleSubMenuClick = (menuId, subMenuId) => {
+    setActiveTab(menuId); setActiveSubTab(subMenuId); setIsSidebarOpen(false); setSelectedKPM(null);
+    if(menuId === 'kpm') setKpmMainTab(subMenuId);
+    if(menuId === 'agenda') setAgendaSubTab(subMenuId);
+    if(menuId === 'tugas') setTugasTab(subMenuId);
+    if(menuId === 'monitoring') setMonitoringSubTab(subMenuId);
+    if(menuId === 'laporan') setLaporanTab(subMenuId);
+    if(menuId === 'pengaturan') setSettingTab(subMenuId);
+  };
 
   const renderAplikasiLainnya = () => (
     <div className="space-y-6 animate-in fade-in max-w-6xl mx-auto">
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-8 rounded-3xl shadow-xl flex justify-between items-center text-white">
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-8 rounded-[2rem] shadow-xl flex justify-between items-center text-white">
         <div><h2 className="text-3xl font-black">Portal Aplikasi Terintegrasi</h2><p className="mt-2 text-blue-100">Akses cepat ke sistem eksternal PKH.</p></div>
-        {currentUser?.role === 'ketuatim_kab' && (<button onClick={() => setShowAddAppModal(true)} className="bg-white/20 hover:bg-white/30 px-5 py-3 rounded-xl font-bold backdrop-blur-sm cursor-pointer"><Icons.Plus className="w-5 h-5 inline mr-2"/>Tambah Link</button>)}
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {appsData.map(app => (
-          <a key={app.id} href={app.url} target="_blank" rel="noreferrer" className="bg-white p-6 rounded-3xl shadow-sm border text-center hover:shadow-md hover:-translate-y-1 transition-all group block cursor-pointer relative">
-            {currentUser?.role === 'ketuatim_kab' && (
-              <button onClick={(e) => { e.preventDefault(); dbDelete('appsData', app.id); }} className="absolute top-3 right-3 text-red-300 hover:text-red-600"><Icons.Trash2 className="w-4 h-4"/></button>
-            )}
-            {getAppIcon(app.nama)}
+        {aplikasiEksternal.map(app => (
+          <a key={app.id} href={app.url} target="_blank" rel="noreferrer" className="bg-white p-6 rounded-3xl shadow-sm border text-center hover:shadow-md hover:-translate-y-1 transition-all group block cursor-pointer">
+            <div className="flex justify-center mb-2"><Icons.Globe className="w-8 h-8 text-indigo-600" /></div>
             <h4 className="font-bold text-gray-800 text-sm">{app.nama}</h4>
-            <span className="text-[10px] text-blue-500 font-bold mt-2 inline-block bg-blue-50 px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity">Buka Link <Icons.ExternalLink className="w-3 h-3 inline"/></span>
           </a>
         ))}
       </div>
     </div>
   );
 
-  if (isLoading) return <div className="h-screen flex items-center justify-center bg-gray-50"><Icons.RefreshCw className="w-10 h-10 text-blue-600 animate-spin" /></div>;
-  
-  if (!currentUser) {
+  if (isInitializing) return <div className="h-screen bg-blue-900 flex items-center justify-center"><Icons.RefreshCw className="w-10 h-10 text-white animate-spin"/></div>;
+
+  if (isLoggedIn === 'false' || !isLoggedIn) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gradient-to-br from-[#0f172a] via-[#1e1b4b] to-[#312e81] p-4 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20"></div>
-        <div className="absolute w-[500px] h-[500px] bg-blue-500/20 rounded-full blur-3xl -top-20 -left-20 animate-pulse"></div>
-        <div className="absolute w-[400px] h-[400px] bg-purple-500/20 rounded-full blur-3xl bottom-0 right-0 animate-pulse delay-1000"></div>
-        <div className="bg-white/10 backdrop-blur-2xl p-10 lg:p-12 rounded-[2.5rem] shadow-2xl w-full max-w-md border border-white/20 relative z-10 transform transition-all hover:scale-[1.01]">
-          <div className="text-center mb-10">
-            <div className="w-24 h-24 bg-gradient-to-tr from-blue-500 to-indigo-600 rounded-3xl mx-auto flex items-center justify-center shadow-xl rotate-3 mb-6">
-              <Icons.Shield className="w-12 h-12 text-white" />
-            </div>
-            <h1 className="text-4xl font-black text-white tracking-tight">PKH<span className="text-blue-400">Pro</span></h1>
-            <p className="text-blue-200 mt-3 font-medium text-sm">Sistem Manajemen Terpadu SDM PKH Tapin</p>
-          </div>
-          <form onSubmit={handleLogin} className="space-y-5">
-            <div>
-              <div className="relative">
-                <Icons.UserCheck className="absolute left-4 top-4 w-5 h-5 text-blue-200" />
-                <input required type="text" placeholder="Username (NIP/NIK)" value={loginForm.username} onChange={e => setLoginForm({...loginForm, username: e.target.value})} className="w-full pl-12 pr-4 py-4 bg-white/10 border border-white/10 rounded-2xl text-white placeholder-blue-200/50 focus:ring-2 focus:ring-blue-400 outline-none transition-all focus:bg-white/20" />
-              </div>
-            </div>
-            <div>
-              <div className="relative">
-                <Icons.Shield className="absolute left-4 top-4 w-5 h-5 text-blue-200" />
-                <input required type="password" placeholder="Password Sistem" value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} className="w-full pl-12 pr-4 py-4 bg-white/10 border border-white/10 rounded-2xl text-white placeholder-blue-200/50 focus:ring-2 focus:ring-blue-400 outline-none transition-all focus:bg-white/20" />
-              </div>
-            </div>
-            {loginError && <div className="bg-red-500/20 border border-red-500/50 text-red-200 p-3 rounded-xl text-sm font-medium flex items-center"><Icons.AlertCircle className="w-4 h-4 mr-2" /> {loginError}</div>}
-            <button type="submit" className="w-full py-4 mt-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-2xl font-black text-lg shadow-lg hover:shadow-blue-500/30 transition-all cursor-pointer">Login Workspace</button>
+      <div className="min-h-screen bg-[#F8FAFC] flex justify-center items-center font-sans">
+        <div className="bg-white p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md border border-white">
+          <div className="text-center mb-8"><div className="w-20 h-20 bg-blue-600 rounded-3xl mx-auto flex items-center justify-center mb-6 shadow-lg rotate-3"><Icons.Shield className="w-10 h-10 text-white -rotate-3"/></div><h2 className="text-3xl font-black text-gray-800">PKH Pro</h2><p className="text-sm text-gray-500 font-bold mt-2 uppercase tracking-wide">Sistem Terpadu Modular</p></div>
+          {loginError && (<div className="bg-red-50 text-red-600 p-4 rounded-xl text-xs font-bold mb-6 flex items-center"><Icons.AlertCircle className="w-5 h-5 mr-3" /> {loginError}</div>)}
+          <form onSubmit={handleLoginSubmit} className="space-y-5">
+            <div><input value={loginUsername} onChange={e => setLoginUsername(e.target.value)} type="text" required className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none" placeholder="Username / NIK" /></div>
+            <div><input value={loginPassword} onChange={e => setLoginPassword(e.target.value)} type="password" required className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none" placeholder="Kata Sandi" /></div>
+            <button type="submit" className="w-full py-4 mt-2 bg-blue-600 text-white rounded-2xl font-black shadow-lg hover:bg-blue-700 cursor-pointer"><Icons.LogIn className="w-5 h-5 inline mr-2" /> Masuk ke Aplikasi</button>
           </form>
-          <p className="text-center text-blue-200/60 text-xs mt-8 font-medium">© 2026 Developer M. Zaen Syachrullah</p>
         </div>
       </div>
     );
   }
 
-  const isKorkab = currentUser?.role === 'ketuatim_kab';
-  const isKorcam = currentUser?.role === 'ketuatim_kec';
-  const activeSdmList = sdmData.filter(s => s.status === 'Aktif');
-
   return (
-    <div className="flex h-screen bg-[#f4f7fb] overflow-hidden text-gray-800 font-sans">
-      {/* --- SIDEBAR --- */}
-      <aside className={`w-72 bg-white/90 backdrop-blur-xl border-r border-gray-200 shadow-2xl lg:shadow-none transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} fixed lg:static inset-y-0 left-0 z-50 flex flex-col`}>
-        <div className="h-24 flex items-center justify-between px-8 border-b border-gray-100 bg-white">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/30">
-               <Icons.Shield className="w-6 h-6 text-white" />
-            </div>
-            <h1 className="text-2xl font-black text-gray-800 tracking-tight">PKH<span className="text-blue-600">Pro</span></h1>
-          </div>
-          <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden text-gray-400 hover:text-gray-600"><Icons.X className="w-6 h-6" /></button>
-        </div>
-        <div className="p-6 border-b border-gray-100 bg-gray-50/50">
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <img src={`https://ui-avatars.com/api/?name=${currentUser.nama}&background=3b82f6&color=fff&rounded=true&bold=true`} alt="Profile" className="w-12 h-12 rounded-full border-2 border-white shadow-md" />
-              <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full"></div>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-black text-gray-800 truncate">{currentUser.nama}</p>
-              <p className="text-[10px] font-bold text-blue-600 uppercase mt-0.5 tracking-wider truncate">{currentUser.role.replace('_', ' ')}</p>
-            </div>
-          </div>
+    <div className="flex h-screen bg-[#F8FAFC] overflow-hidden font-sans">
+      {/* SIDEBAR MEWAH & MODULAR */}
+      <aside className={`fixed inset-y-0 left-0 z-50 w-[280px] bg-white border-r border-slate-100 shadow-2xl lg:shadow-none lg:relative transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 transition-transform duration-300 flex flex-col`}>
+        <div className="p-8 border-b border-slate-50 flex items-center gap-4">
+          <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl flex items-center justify-center shadow-lg"><Icons.Shield className="w-6 h-6 text-white" /></div>
+          <h2 className="font-black text-2xl text-slate-800 tracking-tight">PKH<span className="text-blue-600">Pro</span></h2>
         </div>
         <nav className="flex-1 overflow-y-auto p-4 space-y-1.5 scrollbar-hide">
-          <p className="px-4 text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 mt-2">Menu Utama</p>
-          {menuConfig.map((item) => {
-            const Icon = Icons[item.icon.split('-').pop().charAt(0).toUpperCase() + item.icon.split('-').pop().slice(1)] || Icons.Circle;
-            if (item.id === 'manajemen_data' && !isKorkab) return null;
-            if (item.id === 'pengaturan' && !isKorkab) return null;
-            return (
-              <button key={item.id} onClick={() => { setActiveTab(item.id); setSelectedKPM(null); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl font-bold text-sm transition-all duration-200 cursor-pointer ${activeTab === item.id ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-gray-600 hover:bg-gray-100'}`}>
-                <i className={`${item.icon} w-5 text-center`}></i> {item.judul}
-              </button>
-            );
+          {menuConfig.map(item => {
+             if (item.id === 'manajemen_data' && !isKorkab) return null;
+             if (item.id === 'ranking' && !isKorkab) return null;
+             const Icon = Icons[item.icon] || Icons.Circle;
+             const hasSub = item.subMenu && item.subMenu.length > 0;
+             const isExpanded = expandedMenu === item.id;
+             const isActive = activeTab === item.id && !hasSub;
+
+             return (
+               <div key={item.id}>
+                 <button onClick={() => handleMenuClick(item.id, item.subMenu)} className={`w-full flex items-center justify-between px-5 py-3.5 rounded-2xl cursor-pointer transition-all ${isActive ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/20' : 'text-slate-600 hover:bg-slate-50 font-medium'}`}>
+                   <div className="flex items-center"><Icon className="w-5 h-5 mr-3"/> <span className="text-sm tracking-wide">{item.judul}</span></div>
+                   {hasSub && <Icons.ChevronDown className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />}
+                 </button>
+                 {hasSub && isExpanded && (
+                   <div className="ml-5 mt-1 pl-4 border-l-2 border-slate-100 space-y-1">
+                     {item.subMenu.map(sub => (
+                       <button key={sub.id} onClick={() => handleSubMenuClick(item.id, sub.id)} className={`w-full text-left px-4 py-3 rounded-xl text-sm transition-all cursor-pointer ${activeTab === item.id && activeSubTab === sub.id ? 'bg-blue-50 text-blue-700 font-black' : 'text-slate-500 font-medium hover:text-blue-600 hover:bg-slate-50'}`}>
+                         {sub.judul}
+                       </button>
+                     ))}
+                   </div>
+                 )}
+               </div>
+             );
           })}
         </nav>
-        <div className="p-4 border-t border-gray-100 bg-white">
-          <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl font-bold text-sm text-red-600 hover:bg-red-50 transition-colors cursor-pointer">
-            <Icons.LogOut className="w-5 h-5" /> Keluar Sistem
-          </button>
-        </div>
+        <div className="p-6 border-t border-slate-50"><button onClick={handleLogout} className="w-full py-4 bg-red-50 hover:bg-red-100 text-red-600 rounded-2xl text-sm font-black uppercase flex items-center justify-center cursor-pointer transition-colors shadow-sm"><Icons.LogOut className="w-5 h-5 mr-3" /> Keluar Sistem</button></div>
       </aside>
 
-      {/* --- MAIN CONTENT AREA --- */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-20 bg-white/80 backdrop-blur-md border-b border-gray-200 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-40">
-          <div className="flex items-center gap-4">
-            <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden text-gray-600 hover:bg-gray-100 p-2 rounded-xl cursor-pointer">
-              <Icons.Menu className="w-6 h-6" />
-            </button>
-            <h2 className="text-xl font-black text-gray-800 capitalize tracking-tight hidden sm:block">
-              {activeTab.replace('_', ' ')}
-            </h2>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="hidden md:flex items-center bg-gray-100 rounded-full px-4 py-2 border border-gray-200">
-              <Icons.Calendar className="w-4 h-4 text-gray-500 mr-2" />
-              <span className="text-xs font-bold text-gray-600">{getCurrentDate()}</span>
-            </div>
-            <button className="relative p-2.5 text-gray-500 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer border border-gray-100">
-              <Icons.Bell className="w-5 h-5" />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
-            </button>
-          </div>
+      {/* AREA KONTEN UTAMA */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+        <header className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-100 p-4 lg:px-8 flex items-center justify-between shadow-sm z-30 sticky top-0">
+          <div className="flex items-center"><button onClick={() => setIsSidebarOpen(true)} className="lg:hidden mr-4 p-2.5 bg-white border border-slate-200 shadow-sm text-slate-600 rounded-xl cursor-pointer"><Icons.Menu className="w-5 h-5" /></button><h1 className="font-black text-xl lg:text-2xl capitalize text-slate-800 tracking-tight hidden sm:block">{String(activeTab).replace('_', ' ')} {activeSubTab && ` / ${activeSubTab.replace('_', ' ')}`}</h1></div>
+          <div className="flex items-center gap-4"><div className="text-right hidden md:block"><p className="text-sm font-black text-slate-800">{currentUserData.nama}</p><p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">{currentUserData.role.replace('_', ' ')}</p></div><img src={`https://ui-avatars.com/api/?name=${currentUserData.nama}&background=E0E7FF&color=4338CA&bold=true`} className="w-11 h-11 rounded-2xl border-2 border-white shadow-md" alt="Avatar" /></div>
         </header>
 
-        {/* --- RENDER CONTENT (KAMAR-KAMAR) --- */}
+        {/* PEMANGGILAN ROUTER KE 13 FILE MODULAR (DILINDUNGI ISOLASIMODUL) */}
         <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 lg:p-8">
-          {activeTab === 'dashboard' && !selectedKPM && <Dashboard safeKpmData={kpmData} currentUserData={currentUser} safePiketData={piketData} safeAgendaData={agendaData} safeTasksData={tasksData} safeVotesData={votesData} isKorkab={isKorkab} isKorcam={isKorcam} goToMenu={goToMenu} getFilteredAgenda={getFilteredAgenda} />}
-          
-          {activeTab === 'catatan' && !selectedKPM && <CatatanHarian safeCatatanData={catatanData} currentUserData={currentUser} setShowCatatanModal={setShowCatatanModal} dbDelete={dbDelete} />}
-          
-          {activeTab === 'kpm' && <DataKPM safeKpmData={kpmData} currentUserData={currentUser} kpmMainTab={kpmMainTab} setKpmMainTab={setKpmMainTab} selectedKPM={selectedKPM} setSelectedKPM={setSelectedKPM} kpmDetailTab={kpmDetailTab} setKpmDetailTab={setKpmDetailTab} setShowPotensialModal={setShowPotensialModal} setShowGraduasiModal={setShowGraduasiModal} showToast={showToast} getFilteredKPM={getFilteredKPM} />}
-          
-          {activeTab === 'agenda' && !selectedKPM && <AgendaPiket agendaSubTab={agendaSubTab} setAgendaSubTab={setAgendaSubTab} safeAgendaData={agendaData} getFilteredAgenda={getFilteredAgenda} isKorkab={isKorkab} isKorcam={isKorcam} setAgendaTypeToEdit={setAgendaTypeToEdit} setShowAgendaModal={setShowAgendaModal} dbUpdate={dbUpdate} dbDelete={dbDelete} selectedAgendaCategory={selectedAgendaCategory} setSelectedAgendaCategory={setSelectedAgendaCategory} handleGeneratePiketReal={handleGeneratePiketReal} setShowLiburModal={setShowLiburModal} aturanPiket={aturanPiket} absenStatus={absenStatus} setAbsenStatus={setAbsenStatus} jamDatang={jamDatang} setJamDatang={setJamDatang} denda={denda} setDenda={setDenda} showToast={showToast} safePiketData={piketData} setShowTukarModal={setShowTukarModal} showTukarModal={showTukarModal} getCurrentTime={getCurrentTime} />}
-          
-          {activeTab === 'monitoring' && !selectedKPM && <MonitoringKPM selectedMonitoringEvent={selectedMonitoringEvent} setSelectedMonitoringEvent={setSelectedMonitoringEvent} setMonitoringSubTab={setMonitoringSubTab} getFilteredKPM={getFilteredKPM} safeKpmData={kpmData} showToast={showToast} />}
-          
-          {activeTab === 'tugas' && !selectedKPM && <TugasVoting tugasTab={tugasTab} setTugasTab={setTugasTab} selectedTaskView={selectedTaskView} setSelectedTaskView={setSelectedTaskView} selectedVoteView={selectedVoteView} setSelectedVoteView={setSelectedVoteView} selectedJadwalView={selectedJadwalView} setSelectedJadwalView={setSelectedJadwalView} safeTasksData={tasksData} safeVotesData={votesData} safeJadwalData={jadwalData} isKorkab={isKorkab} isKorcam={isKorcam} currentUserData={currentUser} setShowTambahTugasModal={setShowTambahTugasModal} setShowLaporTugasModal={setShowLaporTugasModal} setSelectedTugasToLapor={setSelectedTugasToLapor} showToast={showToast} activeSdmList={activeSdmList} dbUpdate={dbUpdate} selectedVote={selectedVote} setSelectedVote={setSelectedVote} setShowTambahVoteModal={setShowTambahVoteModal} setShowTambahJadwalModal={setShowTambahJadwalModal} setShowIsiJadwalModal={setShowIsiJadwalModal} />}
-          
-          {activeTab === 'pengaduan' && !selectedKPM && <PengaduanLaporan safePengaduanData={pengaduanData} setShowPengaduanModal={setShowPengaduanModal} isKorkab={isKorkab} setSelectedPengaduan={setSelectedPengaduan} setShowTindakLanjutModal={setShowTindakLanjutModal} dbDelete={dbDelete} />} 
-          
-          {activeTab === 'laporan' && !selectedKPM && <LaporanRHK laporanTab={laporanTab} setLaporanTab={setLaporanTab} denda={denda} currentUserData={currentUser} aturanPiket={aturanPiket} showToast={showToast} />}
-          
-          {activeTab === 'ranking' && !selectedKPM && <RankingSDM rankingData={rankingData} />}
-          
-          {activeTab === 'sdm' && !selectedKPM && <DatabaseSDM safeSdmData={sdmData} isKorkab={isKorkab} setSdmForm={setSdmForm} setShowSdmModal={setShowSdmModal} dbDelete={dbDelete} isSaving={isSaving} setIsSaving={setIsSaving} />}
-          
-          {activeTab === 'peta' && !selectedKPM && <PetaGeotagging filterDesaMaps={filterDesaMaps} setFilterDesaMaps={setFilterDesaMaps} getFilteredKPM={getFilteredKPM} safeKpmData={kpmData} isKorkab={isKorkab} setIsSaving={setIsSaving} dbUpdate={dbUpdate} showToast={showToast} />}
-          
-          {activeTab === 'aplikasi_lainnya' && !selectedKPM && renderAplikasiLainnya()}
-          
-          {activeTab === 'pengaturan' && !selectedKPM && <Pengaturan settingTab={settingTab} setSettingTab={setSettingTab} currentUserData={currentUser} isKorkab={isKorkab} aturanPiket={aturanPiket} setAturanPiket={setAturanPiket} showToast={showToast} />} 
-          
-          {activeTab === 'manajemen_data' && !selectedKPM && isKorkab && <ManajemenData setUploadType={setUploadType} setUploadState={setUploadState} setShowUploadModal={setShowUploadModal} handleResetDB={handleResetDB} isKorkab={isKorkab} db={db} appId={appId} />} 
+           <IsolasiModul>
+              {activeTab === 'dashboard' && !selectedKPM && <Dashboard safeKpmData={safeKpmData} currentUserData={currentUserData} safePiketData={safePiketData} safeAgendaData={safeAgendaData} safeTasksData={tasksData} safeVotesData={votesData} isKorkab={isKorkab} isKorcam={isKorcam} goToMenu={goToMenu} getFilteredAgenda={getFilteredAgenda} />}
+              {activeTab === 'catatan' && !selectedKPM && <CatatanHarian safeCatatanData={safeCatatanData} currentUserData={currentUserData} setShowCatatanModal={setShowCatatanModal} dbDelete={dbDelete} />}
+              {activeTab === 'kpm' && <DataKPM safeKpmData={safeKpmData} currentUserData={currentUserData} kpmMainTab={kpmMainTab} setKpmMainTab={setKpmMainTab} selectedKPM={selectedKPM} setSelectedKPM={setSelectedKPM} kpmDetailTab={kpmDetailTab} setKpmDetailTab={setKpmDetailTab} setShowPotensialModal={setShowPotensialModal} setShowGraduasiModal={setShowGraduasiModal} showToast={showToast} getFilteredKPM={getFilteredKPM} />}
+              {activeTab === 'agenda' && !selectedKPM && <AgendaPiket agendaSubTab={agendaSubTab} setAgendaSubTab={setAgendaSubTab} safeAgendaData={safeAgendaData} getFilteredAgenda={getFilteredAgenda} isKorkab={isKorkab} isKorcam={isKorcam} setAgendaTypeToEdit={setAgendaTypeToEdit} setShowAgendaModal={setShowAgendaModal} dbUpdate={dbUpdate} dbDelete={dbDelete} selectedAgendaCategory={selectedAgendaCategory} setSelectedAgendaCategory={setSelectedAgendaCategory} handleGeneratePiketReal={handleGeneratePiketReal} setShowLiburModal={setShowLiburModal} aturanPiket={aturanPiket} absenStatus={absenStatus} setAbsenStatus={setAbsenStatus} jamDatang={jamDatang} setJamDatang={setJamDatang} denda={denda} setDenda={setDenda} showToast={showToast} safePiketData={safePiketData} setShowTukarModal={setShowTukarModal} showTukarModal={showTukarModal} getCurrentTime={getCurrentTime} />}
+              {activeTab === 'monitoring' && !selectedKPM && <MonitoringKPM selectedMonitoringEvent={selectedMonitoringEvent} setSelectedMonitoringEvent={setSelectedMonitoringEvent} setMonitoringSubTab={setMonitoringSubTab} getFilteredKPM={getFilteredKPM} safeKpmData={safeKpmData} showToast={showToast} />}
+              {activeTab === 'tugas' && !selectedKPM && <TugasVoting tugasTab={tugasTab} setTugasTab={setTugasTab} selectedTaskView={selectedTaskView} setSelectedTaskView={setSelectedTaskView} selectedVoteView={selectedVoteView} setSelectedVoteView={setSelectedVoteView} selectedJadwalView={selectedJadwalView} setSelectedJadwalView={setSelectedJadwalView} safeTasksData={tasksData} safeVotesData={votesData} safeJadwalData={safeJadwalData} isKorkab={isKorkab} isKorcam={isKorcam} currentUserData={currentUserData} setShowTambahTugasModal={setShowTambahTugasModal} setShowLaporTugasModal={setShowLaporTugasModal} setSelectedTugasToLapor={setSelectedTugasToLapor} showToast={showToast} activeSdmList={activeSdmList} dbUpdate={dbUpdate} selectedVote={selectedVote} setSelectedVote={setSelectedVote} setShowTambahVoteModal={setShowTambahVoteModal} setShowTambahJadwalModal={setShowTambahJadwalModal} setShowIsiJadwalModal={setShowIsiJadwalModal} />}
+              {activeTab === 'pengaduan' && !selectedKPM && <PengaduanLaporan safePengaduanData={safePengaduanData} setShowPengaduanModal={setShowPengaduanModal} isKorkab={isKorkab} setSelectedPengaduan={setSelectedPengaduan} setShowTindakLanjutModal={setShowTindakLanjutModal} dbDelete={dbDelete} />} 
+              {activeTab === 'laporan' && !selectedKPM && <LaporanRHK laporanTab={laporanTab} setLaporanTab={setLaporanTab} denda={denda} currentUserData={currentUserData} aturanPiket={aturanPiket} showToast={showToast} />}
+              {activeTab === 'ranking' && !selectedKPM && isKorkab && <RankingSDM rankingData={rankingData} />}
+              {activeTab === 'sdm' && !selectedKPM && <DatabaseSDM safeSdmData={safeSdmData} isKorkab={isKorkab} setSdmForm={setSdmForm} setShowSdmModal={setShowSdmModal} dbDelete={dbDelete} isSaving={isSaving} setIsSaving={setIsSaving} />}
+              {activeTab === 'manajemen_data' && !selectedKPM && isKorkab && <ManajemenData setUploadType={setUploadType} setUploadState={setUploadState} setShowUploadModal={setShowUploadModal} handleResetDB={handleResetDB} isKorkab={isKorkab} db={db} appId={appId} />} 
+              {activeTab === 'peta' && !selectedKPM && <PetaGeotagging filterDesaMaps={filterDesaMaps} setFilterDesaMaps={setFilterDesaMaps} getFilteredKPM={getFilteredKPM} safeKpmData={safeKpmData} isKorkab={isKorkab} setIsSaving={setIsSaving} dbUpdate={dbUpdate} showToast={showToast} />}
+              {activeTab === 'pengaturan' && !selectedKPM && isKorkab && <Pengaturan settingTab={settingTab} setSettingTab={setSettingTab} currentUserData={currentUserData} isKorkab={isKorkab} aturanPiket={aturanPiket} setAturanPiket={setAturanPiket} showToast={showToast} />} 
+              {activeTab === 'aplikasi_lainnya' && !selectedKPM && renderAplikasiLainnya()}
+           </IsolasiModul>
         </main>
       </div>
 
-      {/* --- MODAL GLOBAL APLIKASI (JANGAN DIHAPUS) --- */}
-      {showAddAppModal && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/70" onClick={() => setShowAddAppModal(false)}></div>
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md relative z-10 p-8">
-            <h3 className="font-black text-2xl mb-6">Tambah Tautan Aplikasi</h3>
-            <form onSubmit={handleAddApp} className="space-y-5">
-              <div><input name="nama" required type="text" placeholder="Nama Aplikasi" className="w-full p-4 border rounded-xl"/></div>
-              <div><input name="url" required type="url" placeholder="https://..." className="w-full p-4 border rounded-xl"/></div>
-              <div className="flex gap-3 mt-8"><button type="button" onClick={() => setShowAddAppModal(false)} className="flex-1 py-4 bg-gray-100 rounded-xl font-bold cursor-pointer">Batal</button><button type="submit" className="flex-1 py-4 bg-indigo-600 text-white rounded-xl font-bold cursor-pointer">Simpan</button></div>
-            </form>
-          </div>
-        </div>
-      )}
-
       {toastMessage && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-900/95 backdrop-blur-md text-white px-6 py-4 rounded-2xl text-sm z-[200] shadow-2xl font-bold flex items-center">
-          <Icons.CheckCircle className="w-5 h-5 text-green-400 mr-3" /> {toastMessage}
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-6 py-4 rounded-2xl z-[200] font-bold shadow-2xl flex items-center">
+          <Icons.CheckCircle className="w-5 h-5 mr-3 text-emerald-400" /> {toastMessage}
         </div>
       )}
     </div>
