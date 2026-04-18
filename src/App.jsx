@@ -13,12 +13,11 @@ import {
   ClipboardList, GraduationCap, Stethoscope, HeartHandshake, Edit, Trash2,
   MessageSquare, Headset, Save, Shield, Database, Sliders, Activity, 
   Printer, CreditCard, BookOpen, ExternalLink, Globe, UserCheck, Bell,
-  UserPlus, FileSpreadsheet, ListTodo, FileUp, Columns, ShieldCheck, ChevronDown,
-  Zap, Loader2, Sparkles, Server, ArrowRight
+  UserPlus, FileSpreadsheet, ListTodo, FileUp, Columns, ShieldCheck, ChevronDown
 } from 'lucide-react';
 
 // ==========================================
-// 1. FIREBASE CONFIG & ANTI-ERROR HELPERS (NO BACKTICKS)
+// 1. FIREBASE CONFIG & ANTI-ERROR HELPERS
 // ==========================================
 const userFirebaseConfig = {
   apiKey: "AIzaSyD_ROaVGAbJep3gp4BgnBnyRceAxjtX2tw",
@@ -78,18 +77,17 @@ const getAppIcon = (nama) => {
 };
 
 // ==========================================
-// 2. STYLING KELAS GLOBAL
+// 2. STYLING KELAS GLOBAL (FUTURISTIC BLUE GLASS)
 // ==========================================
-const glassCard = "bg-slate-900/60 backdrop-blur-xl border border-slate-700/50 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] rounded-3xl";
+const glassCard = "bg-slate-900/60 backdrop-blur-xl border border-slate-700/50 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] rounded-[2rem]";
 const glassInput = "w-full p-4 bg-slate-800/50 border border-slate-700 focus:border-cyan-500 rounded-2xl outline-none transition-all text-slate-200 font-medium placeholder:text-slate-500 focus:bg-slate-800 focus:shadow-[0_0_15px_rgba(34,211,238,0.2)]";
 const glassButton = "w-full py-4 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-2xl font-black tracking-wide shadow-[0_0_20px_rgba(34,211,238,0.3)] transition-all hover:shadow-[0_0_30px_rgba(34,211,238,0.5)] hover:-translate-y-1 flex items-center justify-center cursor-pointer";
 const modalOverlay = "fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300";
 const modalContent = "bg-slate-900 border border-slate-700 shadow-[0_0_50px_rgba(0,0,0,0.5)] rounded-[2.5rem] w-full max-w-lg relative z-10 p-8 flex flex-col max-h-[90vh] overflow-y-auto scrollbar-hide animate-in zoom-in-95 duration-300";
 
 // ==========================================
-// 3. KOMPONEN MODULAR INTERNAL (ANTI ERROR)
+// 3. KOMPONEN MODULAR MANAJEMEN DATA
 // ==========================================
-
 const ModulManajemenData = ({ db, isKorkab, showToast }) => {
   const [activeTab, setActiveTab] = useState("kpm");
   const [data, setData] = useState({});
@@ -203,7 +201,7 @@ const ModulManajemenData = ({ db, isKorkab, showToast }) => {
 // ==========================================
 // 4. MAIN APP COMPONENT (ULTIMATE)
 // ==========================================
-export default function App() {
+const App = () => {
   const [firebaseUser, setFirebaseUser] = useState(null);
   const [isInitializing, setIsInitializing] = useState(true);
   const [isSaving, setIsSaving] = useState(false); 
@@ -223,35 +221,25 @@ export default function App() {
   const [kpmMainTab, setKpmMainTab] = useState("daftar"); 
   const [agendaSubTab, setAgendaSubTab] = useState("harian");
   const [tugasTab, setTugasTab] = useState("daftar");
-  const [laporanTab, setLaporanTab] = useState("input");
   
   const [selectedKPM, setSelectedKPM] = useState(null);
-  const [selectedTaskView, setSelectedTaskView] = useState(null);
-  const [selectedVoteView, setSelectedVoteView] = useState(null);
   const [absenStatus, setAbsenStatus] = useState("belum");
   const [jamDatang, setJamDatang] = useState("");
   
-  const [modals, setModals] = useState({ sdm: false, tugas: false, vote: false, pengaduan: false, catatan: false, app: false, potensial: false, graduasi: false, agenda: false });
-  const toggleModal = (key, val) => setModals(prev => ({...prev, [key]: val}));
-
   const [sdmData, setSdmData] = useState([]); const [kpmData, setKpmData] = useState([]);
   const [agendaData, setAgendaData] = useState([]); const [tasksData, setTasksData] = useState([]);
   const [votesData, setVotesData] = useState([]); const [pengaduanData, setPengaduanData] = useState([]);
   const [catatanData, setCatatanData] = useState([]); const [piketData, setPiketData] = useState([]);
 
-  const aturanPiket = { jamMulai: "08:00", jamSelesai: "16:00", denda: 50000 };
   const safeSdmData = Array.isArray(sdmData) ? sdmData : [];
   const safeKpmData = Array.isArray(kpmData) ? kpmData : [];
   const safeAgendaData = Array.isArray(agendaData) ? agendaData : [];
   const safeTasksData = Array.isArray(tasksData) ? tasksData : [];
   const safeVotesData = Array.isArray(votesData) ? votesData : [];
-  const safePiketData = Array.isArray(piketData) ? piketData : [];
-  const safeCatatanData = Array.isArray(catatanData) ? catatanData : [];
 
   const activeSdmList = safeSdmData.length > 0 ? safeSdmData : [{ id: "admin1", nama: "Admin Master", role: "ketuatim_kab", nik: "admin", password: "admin", status: "Aktif" }];
   const currentUserData = activeSdmList.find(s => String(s.id) === String(selectedUserId)) || activeSdmList[0];
   const isKorkab = currentUserData?.role === "ketuatim_kab";
-  const isKorcam = currentUserData?.role === "ketuatim_kec";
 
   useEffect(() => {
     if (!auth) return;
@@ -448,7 +436,7 @@ export default function App() {
         </main>
       </div>
 
-      {/* --- ALL MODALS & TOAST ANIMASI KEREN --- */}
+      {/* --- TOAST ANIMASI KEREN --- */}
       {isSaving && (<div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-xl animate-in fade-in duration-300"><div className="w-24 h-24 bg-slate-900 border border-slate-700 rounded-[2.5rem] shadow-[0_0_50px_rgba(34,211,238,0.2)] flex items-center justify-center mb-8 animate-bounce"><RefreshCw className="w-10 h-10 text-cyan-400 animate-spin"/></div><p className="text-cyan-400 font-black text-xl tracking-widest animate-pulse drop-shadow-md">SINKRONISASI CLOUD...</p></div>)}
 
       {toastMessage && (
@@ -459,7 +447,9 @@ export default function App() {
       )}
     </div>
   );
-}
+};
+
+export default App;
 
 
 ```
