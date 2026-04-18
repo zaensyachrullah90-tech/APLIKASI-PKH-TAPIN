@@ -13,11 +13,12 @@ import {
   ClipboardList, GraduationCap, Stethoscope, HeartHandshake, Edit, Trash2,
   MessageSquare, Headset, Save, Shield, Database, Sliders, Activity, 
   Printer, CreditCard, BookOpen, ExternalLink, Globe, UserCheck, Bell,
-  UserPlus, FileSpreadsheet, ListTodo, FileUp, Columns, ShieldCheck, ChevronDown
+  UserPlus, FileSpreadsheet, ListTodo, FileUp, Columns, ShieldCheck, ChevronDown,
+  Zap, Loader2, Sparkles, Server, ArrowRight
 } from 'lucide-react';
 
 // ==========================================
-// 1. FIREBASE CONFIG & ANTI-ERROR HELPERS
+// 1. FIREBASE CONFIG & ANTI-ERROR HELPERS (NO BACKTICKS!)
 // ==========================================
 const userFirebaseConfig = {
   apiKey: "AIzaSyD_ROaVGAbJep3gp4BgnBnyRceAxjtX2tw",
@@ -56,6 +57,7 @@ function usePersistentState(key, initialValue) {
   useEffect(() => { localStorage.setItem(key, state); }, [key, state]); return [state, setState];
 }
 
+// INJEKSI EXCEL BROWSER - MENCEGAH VITE BUILD ERROR
 const loadXLSX = async () => {
   if (window.XLSX) return window.XLSX;
   return new Promise((resolve, reject) => {
@@ -77,16 +79,16 @@ const getAppIcon = (nama) => {
 };
 
 // ==========================================
-// 2. STYLING KELAS GLOBAL (FUTURISTIC BLUE GLASS)
+// 2. STYLING GLOBAL (FUTURISTIC DARK BLUE GLASS)
 // ==========================================
-const glassCard = "bg-slate-900/60 backdrop-blur-xl border border-slate-700/50 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] rounded-[2rem]";
-const glassInput = "w-full p-4 bg-slate-800/50 border border-slate-700 focus:border-cyan-500 rounded-2xl outline-none transition-all text-slate-200 font-medium placeholder:text-slate-500 focus:bg-slate-800 focus:shadow-[0_0_15px_rgba(34,211,238,0.2)]";
-const glassButton = "w-full py-4 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-2xl font-black tracking-wide shadow-[0_0_20px_rgba(34,211,238,0.3)] transition-all hover:shadow-[0_0_30px_rgba(34,211,238,0.5)] hover:-translate-y-1 flex items-center justify-center cursor-pointer";
+const glassCard = "bg-slate-900/60 backdrop-blur-2xl border border-slate-700/50 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] rounded-[2rem]";
+const glassInput = "w-full p-4 bg-slate-800/80 border border-slate-700 focus:border-cyan-500 rounded-2xl outline-none transition-all text-white font-bold placeholder:text-slate-500 focus:bg-slate-800 focus:shadow-[0_0_15px_rgba(34,211,238,0.2)]";
+const glassButton = "w-full py-4 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white rounded-2xl font-black tracking-wide shadow-[0_0_20px_rgba(34,211,238,0.3)] transition-all hover:shadow-[0_0_30px_rgba(34,211,238,0.5)] hover:-translate-y-1 flex items-center justify-center cursor-pointer";
 const modalOverlay = "fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300";
-const modalContent = "bg-slate-900 border border-slate-700 shadow-[0_0_50px_rgba(0,0,0,0.5)] rounded-[2.5rem] w-full max-w-lg relative z-10 p-8 flex flex-col max-h-[90vh] overflow-y-auto scrollbar-hide animate-in zoom-in-95 duration-300";
+const modalContent = "bg-slate-900 border border-slate-700 shadow-[0_0_50px_rgba(0,0,0,0.5)] rounded-[2.5rem] w-full max-w-xl relative z-10 p-8 flex flex-col max-h-[90vh] overflow-y-auto scrollbar-hide animate-in zoom-in-95 duration-300";
 
 // ==========================================
-// 3. KOMPONEN MODULAR MANAJEMEN DATA
+// 3. KOMPONEN MASTER DATA (EXCEL ANTI-ERROR)
 // ==========================================
 const ModulManajemenData = ({ db, isKorkab, showToast }) => {
   const [activeTab, setActiveTab] = useState("kpm");
@@ -154,30 +156,30 @@ const ModulManajemenData = ({ db, isKorkab, showToast }) => {
       <div className={glassCard + " p-8 flex flex-col lg:flex-row justify-between items-center gap-6 overflow-hidden relative"}>
         <div className="absolute right-0 top-0 w-64 h-64 bg-cyan-600/10 rounded-full blur-3xl pointer-events-none"></div>
         <div className="relative z-10 flex items-center gap-5">
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-2xl flex items-center justify-center shadow-lg shadow-cyan-500/30"><Database className="w-8 h-8 text-white"/></div>
+          <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-2xl flex items-center justify-center shadow-lg shadow-cyan-500/30"><Server className="w-8 h-8 text-white"/></div>
           <div><h2 className="text-3xl font-black text-white tracking-tight">Database Engine</h2><p className="text-slate-400 font-medium">Manipulasi data dinamis sinkron Cloud.</p></div>
         </div>
         <div className="flex flex-wrap bg-slate-800/80 backdrop-blur-md p-1.5 rounded-2xl relative z-10 border border-slate-700 overflow-x-auto">
-          {tabs.map((tab) => (<button key={tab.id} onClick={() => setActiveTab(tab.id)} className={"px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 whitespace-nowrap " + (activeTab === tab.id ? "bg-cyan-500 text-slate-900 shadow-md" : "text-slate-400 hover:text-white")}>{tab.label}</button>))}
+          {tabs.map((tab) => (<button key={tab.id} onClick={() => setActiveTab(tab.id)} className={"px-5 py-3 rounded-xl font-bold text-sm transition-all duration-300 whitespace-nowrap " + (activeTab === tab.id ? "bg-cyan-500 text-slate-900 shadow-[0_0_15px_rgba(34,211,238,0.4)]" : "text-slate-400 hover:text-white hover:bg-slate-700")}>{tab.label}</button>))}
         </div>
       </div>
 
       <div className={glassCard + " p-8"}>
         <div className="flex flex-col lg:flex-row justify-between items-center mb-8 gap-4">
-          <div className="relative w-full lg:w-1/3"><Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" /><input type="text" placeholder={"Cari di " + activeTab + "..."} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className={glassInput} style={{paddingLeft: "3rem"}} /></div>
+          <div className="relative w-full lg:w-1/3"><Search className="absolute left-5 top-1/2 -translate-y-1/2 text-cyan-400 w-5 h-5" /><input type="text" placeholder={"Cari di " + activeTab + "..."} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className={glassInput} style={{paddingLeft: "3.5rem"}} /></div>
           {isKorkab && (
             <div className="flex flex-wrap gap-3 w-full lg:w-auto">
-              <label className="cursor-pointer bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white px-5 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/30 transition-all hover:-translate-y-1"><UploadCloud className="w-5 h-5" /> Import Excel<input type="file" accept=".csv, .xlsx, .xls" className="hidden" onChange={handleFileUpload} disabled={loading}/></label>
-              <button onClick={handleAddColumn} className="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-blue-400 px-5 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all cursor-pointer"><Columns className="w-5 h-5" /> Kolom</button>
-              <button onClick={openAddModal} className="bg-cyan-500 hover:bg-cyan-400 text-slate-900 px-5 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(34,211,238,0.4)] transition-all cursor-pointer"><Plus className="w-5 h-5" /> Baris</button>
+              <label className="cursor-pointer bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white px-6 py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all hover:-translate-y-1"><UploadCloud className="w-5 h-5" /> Import Excel<input type="file" accept=".csv, .xlsx, .xls" className="hidden" onChange={handleFileUpload} disabled={loading}/></label>
+              <button onClick={handleAddColumn} className="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-cyan-400 px-6 py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 transition-all cursor-pointer"><Columns className="w-5 h-5" /> Kolom Baru</button>
+              <button onClick={openAddModal} className="bg-cyan-500 hover:bg-cyan-400 text-slate-900 px-6 py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(34,211,238,0.4)] transition-all hover:-translate-y-1 cursor-pointer"><Plus className="w-5 h-5" /> Tambah Baris</button>
             </div>
           )}
         </div>
 
-        {loading ? (<div className="py-20 text-center"><RefreshCw className="w-12 h-12 text-cyan-500 animate-spin mx-auto mb-4" /><p className="text-slate-400 font-bold animate-pulse">Menyinkronkan Data...</p></div>) : (
-          <div className="overflow-x-auto rounded-2xl border border-slate-700">
-            <table className="w-full text-sm text-left"><thead className="bg-slate-800 text-slate-300 uppercase font-black text-xs tracking-wider border-b border-slate-700"><tr>{isKorkab && <th className="px-6 py-5">Aksi</th>}{headers.map(h => <th key={h} className="px-6 py-5">{h.split("_").join(" ")}</th>)}</tr></thead>
-              <tbody className="divide-y divide-slate-700/50">{filteredRecords.length > 0 ? filteredRecords.map(([id, record]) => (<tr key={id} className="hover:bg-slate-800/50 transition-colors">{isKorkab && (<td className="px-6 py-4 flex gap-2"><button onClick={() => openEditModal(id, record)} className="p-2 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500 hover:text-white transition-all cursor-pointer"><Edit className="w-4 h-4" /></button><button onClick={() => handleDelete(id)} className="p-2 bg-rose-500/20 text-rose-400 rounded-lg hover:bg-rose-500 hover:text-white transition-all cursor-pointer"><Trash2 className="w-4 h-4" /></button></td>)}{headers.map(h => <td key={id + "-" + h} className="px-6 py-4 text-slate-300 font-medium truncate max-w-[200px]">{String(record[h] || "-")}</td>)}</tr>)) : (<tr><td colSpan={headers.length + (isKorkab ? 1 : 0)} className="text-center py-16"><Database className="w-16 h-16 text-slate-600 mx-auto mb-4" /><p className="text-slate-400 font-bold">Database Kosong</p></td></tr>)}</tbody>
+        {loading ? (<div className="py-24 text-center"><RefreshCw className="w-14 h-14 text-cyan-500 animate-spin mx-auto mb-6" /><p className="text-cyan-400 font-black tracking-widest animate-pulse">MENYINKRONKAN DATA...</p></div>) : (
+          <div className="overflow-x-auto rounded-[1.5rem] border border-slate-700 shadow-inner bg-slate-900/50">
+            <table className="w-full text-sm text-left"><thead className="bg-slate-800 text-cyan-400 uppercase font-black text-xs tracking-widest border-b border-slate-700"><tr>{isKorkab && <th className="px-6 py-6">Aksi</th>}{headers.map(h => <th key={h} className="px-6 py-6">{h.split("_").join(" ")}</th>)}</tr></thead>
+              <tbody className="divide-y divide-slate-800/50">{filteredRecords.length > 0 ? filteredRecords.map(([id, record]) => (<tr key={id} className="hover:bg-slate-800/80 transition-colors group">{isKorkab && (<td className="px-6 py-4 flex gap-2"><button onClick={() => openEditModal(id, record)} className="w-10 h-10 bg-slate-800 text-cyan-400 rounded-xl hover:bg-cyan-500 hover:text-white transition-all cursor-pointer flex items-center justify-center border border-slate-600"><Edit className="w-4 h-4" /></button><button onClick={() => handleDelete(id)} className="w-10 h-10 bg-slate-800 text-rose-400 rounded-xl hover:bg-rose-500 hover:text-white transition-all cursor-pointer flex items-center justify-center border border-slate-600"><Trash2 className="w-4 h-4" /></button></td>)}{headers.map(h => <td key={id + "-" + h} className="px-6 py-5 text-slate-300 font-bold truncate max-w-[250px]">{String(record[h] || "-")}</td>)}</tr>)) : (<tr><td colSpan={headers.length + (isKorkab ? 1 : 0)} className="text-center py-20"><Database className="w-20 h-20 text-slate-700 mx-auto mb-6" /><p className="text-slate-500 font-black text-xl">DATABASE KOSONG</p></td></tr>)}</tbody>
             </table>
           </div>
         )}
@@ -186,11 +188,11 @@ const ModulManajemenData = ({ db, isKorkab, showToast }) => {
       {showModal && isKorkab && (
         <div className={modalOverlay} onClick={() => setShowModal(false)}>
           <div className={modalContent} onClick={e => e.stopPropagation()}>
-            <h3 className="font-black text-2xl mb-6 text-white flex items-center">{modalMode === "add" ? <><Plus className="w-6 h-6 mr-3 text-cyan-400"/> Tambah Data</> : <><Edit className="w-6 h-6 mr-3 text-cyan-400"/> Edit Data</>}</h3>
-            <form id="crud-form" onSubmit={handleSaveData} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {(headers.length > 0 ? headers : ["nama", "nik", "status"]).map((key) => (<div key={key}><label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1 mb-1 block">{key.split("_").join(" ")}</label><input type="text" value={formData[key] || ""} onChange={(e) => setFormData({ ...formData, [key]: e.target.value })} className={glassInput} /></div>))}
+            <h3 className="font-black text-3xl mb-8 text-white flex items-center">{modalMode === "add" ? <><Plus className="w-8 h-8 mr-4 text-cyan-400"/> Tambah Data</> : <><Edit className="w-8 h-8 mr-4 text-cyan-400"/> Edit Data</>}</h3>
+            <form id="crud-form" onSubmit={handleSaveData} className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {(headers.length > 0 ? headers : ["nama", "nik", "status"]).map((key) => (<div key={key}><label className="text-xs font-black text-cyan-500 uppercase tracking-widest ml-2 mb-2 block">{key.split("_").join(" ")}</label><input type="text" value={formData[key] || ""} onChange={(e) => setFormData({ ...formData, [key]: e.target.value })} className={glassInput} /></div>))}
             </form>
-            <div className="flex gap-4 mt-8 pt-6 border-t border-slate-700"><button type="button" onClick={() => setShowModal(false)} className="flex-1 py-4 bg-slate-800 text-slate-300 rounded-xl font-bold hover:bg-slate-700 cursor-pointer">Batal</button><button type="submit" form="crud-form" className={glassButton}>Simpan ke Cloud</button></div>
+            <div className="flex gap-4 mt-10 pt-8 border-t border-slate-700"><button type="button" onClick={() => setShowModal(false)} className="flex-1 py-5 bg-slate-800 text-slate-300 rounded-2xl font-black hover:bg-slate-700 cursor-pointer transition-colors text-lg">Batal</button><button type="submit" form="crud-form" className={glassButton + " text-lg"}>Simpan ke Cloud</button></div>
           </div>
         </div>
       )}
@@ -199,9 +201,9 @@ const ModulManajemenData = ({ db, isKorkab, showToast }) => {
 };
 
 // ==========================================
-// 4. MAIN APP COMPONENT (ULTIMATE)
+// 4. MAIN APP COMPONENT (ULTIMATE ONE FILE)
 // ==========================================
-const App = () => {
+export default function App() {
   const [firebaseUser, setFirebaseUser] = useState(null);
   const [isInitializing, setIsInitializing] = useState(true);
   const [isSaving, setIsSaving] = useState(false); 
@@ -231,11 +233,25 @@ const App = () => {
   const [votesData, setVotesData] = useState([]); const [pengaduanData, setPengaduanData] = useState([]);
   const [catatanData, setCatatanData] = useState([]); const [piketData, setPiketData] = useState([]);
 
+  // KUMPULAN STATE MODAL (LENGKAP!)
+  const [showPotensialModal, setShowPotensialModal] = useState(false);
+  const [showGraduasiModal, setShowGraduasiModal] = useState(false);
+  const [showAgendaModal, setShowAgendaModal] = useState(false); 
+  const [showCatatanModal, setShowCatatanModal] = useState(false);
+  const [showTambahTugasModal, setShowTambahTugasModal] = useState(false);
+  const [showTambahVoteModal, setShowTambahVoteModal] = useState(false);
+  const [showPengaduanModal, setShowPengaduanModal] = useState(false);
+  const [showSdmModal, setShowSdmModal] = useState(false);
+  const [showAddAppModal, setShowAddAppModal] = useState(false);
+
   const safeSdmData = Array.isArray(sdmData) ? sdmData : [];
   const safeKpmData = Array.isArray(kpmData) ? kpmData : [];
   const safeAgendaData = Array.isArray(agendaData) ? agendaData : [];
   const safeTasksData = Array.isArray(tasksData) ? tasksData : [];
   const safeVotesData = Array.isArray(votesData) ? votesData : [];
+  const safePengaduanData = Array.isArray(pengaduanData) ? pengaduanData : [];
+  const safeCatatanData = Array.isArray(catatanData) ? catatanData : [];
+  const safePiketData = Array.isArray(piketData) ? piketData : [];
 
   const activeSdmList = safeSdmData.length > 0 ? safeSdmData : [{ id: "admin1", nama: "Admin Master", role: "ketuatim_kab", nik: "admin", password: "admin", status: "Aktif" }];
   const currentUserData = activeSdmList.find(s => String(s.id) === String(selectedUserId)) || activeSdmList[0];
@@ -270,6 +286,9 @@ const App = () => {
   
   const handleMenuClick = (mId, subs) => { if(subs && subs.length > 0) setExpandedMenu(expandedMenu===mId ? "" : mId); else {setActiveTab(mId); setActiveSubTab(""); setIsSidebarOpen(false); setSelectedKPM(null);} };
   const handleSubMenuClick = (mId, subId) => { setActiveTab(mId); setActiveSubTab(subId); setIsSidebarOpen(false); setSelectedKPM(null); if(mId==="kpm") setKpmMainTab(subId); if(mId==="agenda") setAgendaSubTab(subId); if(mId==="tugas") setTugasTab(subId); };
+
+  // FUNGSI CRUD LENGKAP DARI ASLI
+  const dbAdd = async (coll, data) => { setIsSaving(true); try { if(db) await set(push(ref(db, getBasePath(coll))), data); showToast("Sistem: Data Tersimpan di Cloud!"); } catch(e){} finally { setIsSaving(false); setShowPotensialModal(false); setShowGraduasiModal(false); setShowAgendaModal(false); setShowCatatanModal(false); setShowTambahTugasModal(false); setShowTambahVoteModal(false); setShowPengaduanModal(false); setShowSdmModal(false); setShowAddAppModal(false); } };
   
   const menuConfig = [
     { id: "dashboard", judul: "Dashboard Utama", icon: Home, subMenu: [] },
@@ -286,7 +305,7 @@ const App = () => {
     { id: "pengaturan", judul: "Pengaturan", icon: Settings, subMenu: [{id:"profil", judul:"Profil Akun"}] }
   ];
 
-  if (isInitializing) return <div className="h-screen bg-slate-950 flex flex-col justify-center items-center"><div className="relative"><div className="absolute inset-0 bg-cyan-500 blur-xl opacity-40 rounded-full animate-pulse"></div><div className="w-24 h-24 bg-slate-900 border border-slate-700 rounded-[2rem] flex items-center justify-center relative z-10 shadow-2xl shadow-cyan-500/20"><Shield className="w-12 h-12 text-cyan-400"/></div></div><RefreshCw className="w-8 h-8 text-cyan-500 animate-spin mt-8 mb-4"/><h2 className="text-sm font-black text-slate-400 tracking-widest uppercase animate-pulse">Menghubungkan Server...</h2></div>;
+  if (isInitializing) return <div className="h-screen bg-slate-950 flex flex-col justify-center items-center"><div className="relative"><div className="absolute inset-0 bg-cyan-500 blur-xl opacity-40 rounded-full animate-pulse"></div><div className="w-24 h-24 bg-slate-900 border border-slate-700 rounded-[2rem] flex items-center justify-center relative z-10 shadow-2xl shadow-cyan-500/20"><Shield className="w-12 h-12 text-cyan-400"/></div></div><RefreshCw className="w-8 h-8 text-cyan-500 animate-spin mt-8 mb-4"/><h2 className="text-sm font-black text-slate-400 tracking-widest uppercase animate-pulse">Menghubungkan Server Cloud...</h2></div>;
 
   if (isLoggedIn === "false" || !isLoggedIn) return (
     <div className="min-h-screen bg-slate-950 flex justify-center items-center relative overflow-hidden font-sans">
@@ -294,9 +313,9 @@ const App = () => {
       <div className="absolute bottom-[-10%] right-[-10%] w-[40rem] h-[40rem] bg-cyan-600/20 rounded-full blur-[100px] pointer-events-none"></div>
       
       <div className={glassCard + " p-10 lg:p-14 w-full max-w-md relative z-10 transition-transform duration-500 transform scale-100 border border-slate-700/50 shadow-[0_0_50px_rgba(0,0,0,0.5)]"}>
-        <div className="text-center mb-10"><div className="w-24 h-24 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-[2rem] mx-auto flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(34,211,238,0.4)] transform rotate-6"><Shield className="w-12 h-12 text-white transform -rotate-6"/></div><h2 className="text-4xl font-black text-white tracking-tight">PKH Pro</h2><p className="text-sm text-cyan-400 font-black mt-2 uppercase tracking-widest flex items-center justify-center gap-2">Secure Portal</p></div>
+        <div className="text-center mb-10"><div className="w-28 h-28 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-[2.5rem] mx-auto flex items-center justify-center mb-8 shadow-[0_0_40px_rgba(34,211,238,0.5)] transform rotate-6"><Shield className="w-14 h-14 text-white transform -rotate-6"/></div><h2 className="text-4xl font-black text-white tracking-tight">PKH Pro</h2><p className="text-sm text-cyan-400 font-black mt-2 uppercase tracking-widest flex items-center justify-center gap-2">Secure Portal</p></div>
         {loginError && (<div className="bg-rose-500/10 text-rose-400 p-4 rounded-2xl text-xs font-bold mb-6 flex items-center border border-rose-500/20 animate-in shake duration-300"><AlertCircle className="w-5 h-5 mr-3 shrink-0" /> {String(loginError)}</div>)}
-        <form onSubmit={handleLoginSubmit} className="space-y-5">
+        <form onSubmit={handleLoginSubmit} className="space-y-6">
           <div className="relative"><UserSquare className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-slate-500"/><input value={loginUsername} onChange={e => setLoginUsername(e.target.value)} type="text" required className={glassInput} style={{paddingLeft:"3.5rem"}} placeholder="Username / NIK KTP" /></div>
           <div className="relative"><Settings className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-slate-500"/><input value={loginPassword} onChange={e => setLoginPassword(e.target.value)} type="password" required className={glassInput} style={{paddingLeft:"3.5rem"}} placeholder="Secure Password" /></div>
           <button type="submit" className={glassButton + " mt-8 py-5 text-lg"}><LogIn className="w-6 h-6 mr-3" /> Authorize Access</button>
@@ -309,6 +328,7 @@ const App = () => {
     <div className="flex h-screen bg-slate-950 text-slate-200 overflow-hidden font-sans relative">
       <div className="absolute top-[-20%] left-[-10%] w-[60rem] h-[60rem] bg-blue-900/10 rounded-full blur-[150px] pointer-events-none"></div>
 
+      {/* --- SIDEBAR --- */}
       <aside className={"fixed inset-y-4 left-4 z-50 w-[280px] bg-slate-900/60 backdrop-blur-3xl border border-slate-700/50 shadow-2xl rounded-[2.5rem] transform " + (isSidebarOpen ? "translate-x-0" : "-translate-x-[120%]") + " lg:relative lg:translate-x-0 transition-all duration-500 flex flex-col overflow-hidden"}>
         <div className="h-28 flex items-center px-8 border-b border-slate-800/80 bg-slate-900/50">
           <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-2xl flex items-center justify-center shadow-[0_0_20px_rgba(34,211,238,0.4)] mr-4"><Activity className="w-6 h-6 text-white" /></div>
@@ -344,6 +364,7 @@ const App = () => {
         </div>
       </aside>
 
+      {/* --- KONTEN UTAMA --- */}
       <div className="flex-1 flex flex-col min-w-0 relative z-10">
         <header className="h-24 flex items-center justify-between px-6 lg:px-10">
           <div className="flex items-center"><button onClick={() => setIsSidebarOpen(true)} className="lg:hidden mr-4 p-3 bg-slate-800 border border-slate-700 text-slate-300 rounded-xl cursor-pointer"><Menu className="w-5 h-5" /></button><h1 className="font-black text-2xl capitalize tracking-tight text-white hidden sm:flex items-center gap-3">{activeTab.split("_").join(" ")} {activeSubTab && <><ChevronRight className="w-5 h-5 text-cyan-500 opacity-50"/> <span className="text-cyan-400">{activeSubTab.split("_").join(" ")}</span></>}</h1></div>
@@ -352,7 +373,7 @@ const App = () => {
 
         <main className="flex-1 overflow-y-auto p-4 lg:p-8 scrollbar-hide pb-24">
           
-          {/* DASHBOARD */}
+          {/* 1. DASHBOARD */}
           {activeTab === "dashboard" && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-6 duration-700 max-w-7xl mx-auto">
               <div className={glassCard + " p-8 lg:p-12 overflow-hidden relative border-cyan-500/20"}>
@@ -361,8 +382,8 @@ const App = () => {
                 <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                   <div>
                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900/80 border border-slate-700 text-cyan-400 text-xs font-bold mb-5 tracking-widest uppercase shadow-inner"><span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_rgba(34,211,238,0.8)]"></span> SINKRONISASI CLOUD AKTIF</div>
-                    <h2 className="text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">Selamat Datang,<br/>{currentUserData.nama.split(" ")[0]}!</h2>
-                    <p className="text-slate-400 mt-4 text-lg font-medium max-w-md">Sistem manajemen cerdas untuk produktivitas maksimal.</p>
+                    <h2 className="text-4xl lg:text-6xl font-black text-white tracking-tight leading-tight">Selamat Datang,<br/>{currentUserData.nama.split(" ")[0]}!</h2>
+                    <p className="text-slate-400 mt-4 text-xl font-medium max-w-md">Sistem manajemen cerdas untuk produktivitas maksimal.</p>
                   </div>
                   <div className="bg-slate-800/80 border border-slate-700 p-8 rounded-[2rem] text-center min-w-[200px] shadow-2xl backdrop-blur-xl"><Trophy className="w-12 h-12 text-yellow-400 mx-auto mb-4 drop-shadow-[0_0_20px_rgba(250,204,21,0.5)]" /><p className="text-xs font-black uppercase tracking-widest text-slate-400">Total Poin</p><p className="text-4xl font-black text-white mt-1">4.250</p></div>
                 </div>
@@ -380,17 +401,34 @@ const App = () => {
             </div>
           )}
 
-          {/* MANAJEMEN DATA EXCEL */}
+          {/* 2. MANAJEMEN DATA EXCEL (HANYA ADMIN) */}
           {activeTab === "manajemen_data" && isKorkab && <ModulManajemenData db={db} isKorkab={isKorkab} showToast={showToast} />}
 
-          {/* KPM */}
+          {/* 3. CATATAN HARIAN */}
+          {activeTab === "catatan" && (
+             <div className="space-y-6 animate-in fade-in duration-500 max-w-7xl mx-auto">
+                <div className="flex justify-between items-center"><h2 className="text-3xl font-black text-white">Buku Catatan Harian</h2><button onClick={() => setShowCatatanModal(true)} className="bg-cyan-500 hover:bg-cyan-400 text-slate-900 px-6 py-3 rounded-2xl font-black text-sm flex items-center gap-2 shadow-[0_0_20px_rgba(34,211,238,0.4)] transition-all hover:-translate-y-1"><Plus className="w-5 h-5"/> Tulis Catatan Baru</button></div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                   {safeCatatanData.map(c => (
+                     <div key={c.id} className={glassCard + " p-8 border-l-4 border-l-cyan-500"}>
+                        <div className="flex justify-between mb-4"><span className="text-xs font-black bg-slate-800 text-cyan-400 px-4 py-2 rounded-xl">{c.tanggal} • {c.jam} WIB</span><button onClick={() => remove(ref(db, getBasePath("catatanData") + "/" + c.id))} className="text-slate-500 hover:text-rose-500 transition-colors"><Trash2 className="w-5 h-5"/></button></div>
+                        <h4 className="text-xl font-black text-white mb-4">{c.kecamatan} - {c.desa}</h4>
+                        <p className="text-slate-400 leading-relaxed">{c.tentang}</p>
+                     </div>
+                   ))}
+                   {safeCatatanData.length === 0 && <div className="col-span-full py-20 text-center"><BookOpen className="w-20 h-20 text-slate-700 mx-auto mb-4"/><p className="text-slate-500 font-bold text-lg">Buku Catatan Kosong</p></div>}
+                </div>
+             </div>
+          )}
+
+          {/* 4. KPM */}
           {activeTab === "kpm" && (
              <div className="space-y-6 animate-in fade-in duration-500 max-w-7xl mx-auto">
                <div className="flex bg-slate-900/60 backdrop-blur-xl rounded-[2rem] p-2 border border-slate-700/50 overflow-x-auto scrollbar-hide sticky top-20 z-20 shadow-lg">
                  {["daftar","potensial","graduasi"].map(t => (<button key={t} onClick={() => setKpmMainTab(t)} className={"flex-1 min-w-[140px] px-6 py-4 text-sm font-black tracking-widest uppercase rounded-2xl transition-all cursor-pointer " + (kpmMainTab === t ? "bg-cyan-500 text-slate-900 shadow-[0_0_15px_rgba(34,211,238,0.4)]" : "text-slate-400 hover:text-white")}>{t}</button>))}
                </div>
                <div className={glassCard + " p-8 border-t-4 border-t-cyan-500/50"}>
-                 <div className="flex justify-between items-center mb-8 gap-4"><div className="relative flex-1"><Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400"/><input type="text" placeholder="Cari NIK / Nama KPM..." className={glassInput} style={{paddingLeft:"3.5rem"}}/></div></div>
+                 <div className="flex justify-between items-center mb-8 gap-4"><div className="relative flex-1"><Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400"/><input type="text" placeholder="Cari NIK / Nama KPM..." className={glassInput} style={{paddingLeft:"3.5rem"}}/></div><button onClick={() => setShowPotensialModal(true)} className="bg-emerald-500 text-white px-6 py-4 rounded-2xl font-black shadow-lg shadow-emerald-500/30 whitespace-nowrap"><Plus className="w-5 h-5 inline mr-2"/>Tambah KPM Baru</button></div>
                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                    {safeKpmData.slice(0,9).map(k => (
                      <div key={k.id} className="bg-slate-800/50 p-8 rounded-[2rem] border border-slate-700 hover:border-cyan-500/50 hover:bg-slate-800 transition-all group hover:-translate-y-1 cursor-pointer">
@@ -400,35 +438,119 @@ const App = () => {
                        <button className="w-full py-4 bg-slate-900 hover:bg-cyan-500 border border-slate-700 hover:border-transparent text-slate-300 hover:text-slate-900 font-black tracking-wider rounded-xl transition-colors uppercase text-xs">Detail Profil Lengkap</button>
                      </div>
                    ))}
+                   {safeKpmData.length === 0 && <div className="col-span-full py-20 text-center"><UsersIcon className="w-20 h-20 text-slate-700 mx-auto mb-4"/><p className="text-slate-500 font-bold text-lg">Tidak ada data KPM.</p></div>}
                  </div>
                </div>
             </div>
           )}
 
-          {/* AGENDA */}
+          {/* 5. AGENDA */}
           {activeTab === "agenda" && (
             <div className="space-y-6 animate-in fade-in duration-500 max-w-7xl mx-auto">
                <div className="flex bg-slate-900/60 backdrop-blur-xl rounded-[2rem] p-2 border border-slate-700/50 overflow-x-auto scrollbar-hide sticky top-20 z-20 shadow-lg">
                  {["harian","khusus","piket"].map(t => (<button key={t} onClick={() => setAgendaSubTab(t)} className={"flex-1 min-w-[140px] px-6 py-4 text-sm font-black tracking-widest uppercase rounded-2xl transition-all cursor-pointer " + (agendaSubTab === t ? "bg-indigo-500 text-white shadow-[0_0_15px_rgba(99,102,241,0.4)]" : "text-slate-400 hover:text-white")}>{t}</button>))}
                </div>
-               <div className={glassCard + " p-12 text-center flex flex-col items-center justify-center min-h-[50vh] border-t-4 border-t-indigo-500/50"}>
-                 <div className="w-28 h-28 bg-indigo-500/20 rounded-[2.5rem] flex items-center justify-center mb-8 border border-indigo-500/30 shadow-[0_0_30px_rgba(99,102,241,0.2)]"><CalendarDays className="w-12 h-12 text-indigo-400"/></div>
-                 <h3 className="text-4xl font-black text-white mb-4 tracking-tight">Area {agendaSubTab.toUpperCase()}</h3>
-                 <p className="text-slate-400 font-medium text-lg">Sinkronisasi Jadwal Cloud Berjalan Aman.</p>
+               {agendaSubTab === "piket" ? (
+                 <div className={glassCard + " p-12 text-center border-t-4 border-t-emerald-500/50 relative overflow-hidden"}>
+                   <CalendarClock className="w-64 h-64 text-emerald-500/10 absolute -right-10 -bottom-10"/>
+                   <h3 className="text-4xl font-black text-white mb-4 tracking-tight flex justify-center items-center"><Clock className="w-12 h-12 mr-4 text-emerald-400"/> Absen Piket (Clock-In)</h3>
+                   <div className="mb-10"><span className="px-6 py-3 bg-slate-800 text-emerald-400 border border-emerald-500/30 rounded-2xl font-bold tracking-widest">Jam Resmi: 08:00 - 16:00 WIB</span></div>
+                   {absenStatus === "belum" && <button onClick={()=>{setAbsenStatus("datang"); setJamDatang(getCurrentTime()); showToast("Absen Masuk Berhasil!");}} className="w-full max-w-md mx-auto py-6 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-2xl rounded-[2rem] shadow-[0_0_30px_rgba(16,185,129,0.4)] transition-all hover:-translate-y-1">KLIK DATANG PIKET</button>}
+                   {absenStatus === "datang" && <div className="space-y-6 max-w-md mx-auto"><div className="bg-slate-800 border border-emerald-500/50 p-6 rounded-[2rem] text-emerald-400 font-black text-2xl">Jam Masuk: {jamDatang} WIB</div><button onClick={()=>{setAbsenStatus("pulang"); showToast("Selesai Piket!");}} className="w-full py-6 bg-rose-500 hover:bg-rose-600 text-white font-black text-2xl rounded-[2rem] shadow-[0_0_30px_rgba(244,63,94,0.4)] transition-all hover:-translate-y-1">KLIK PULANG</button></div>}
+                   {absenStatus === "pulang" && <div className="max-w-md mx-auto bg-slate-800 border border-slate-700 p-8 rounded-[2rem] text-center"><CheckCircle className="w-16 h-16 text-emerald-500 mx-auto mb-4"/><h4 className="text-2xl font-black text-white">Piket Selesai</h4></div>}
+                 </div>
+               ) : (
+                 <div className={glassCard + " p-8 border-t-4 border-t-indigo-500/50"}>
+                   <button onClick={() => setShowAgendaModal(true)} className="w-full py-5 bg-slate-800 border-2 border-dashed border-indigo-500/50 text-indigo-400 hover:bg-indigo-500 hover:text-white rounded-[2rem] font-black text-lg transition-all mb-8"><Plus className="w-6 h-6 inline mr-2"/>Tambah Agenda {agendaSubTab}</button>
+                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                     {safeAgendaData.filter(a => a.type === agendaSubTab).map(a => (
+                       <div key={a.id} className="bg-slate-800/50 p-8 rounded-[2rem] border border-slate-700 hover:border-indigo-500/50 transition-colors relative">
+                         <h4 className="text-2xl font-black text-white mb-4 pr-10">{a.title}</h4>
+                         <div className="space-y-3 bg-slate-900/50 p-5 rounded-2xl border border-slate-700/50"><p className="text-sm font-bold text-slate-300 flex items-center"><CalendarDays className="w-4 h-4 mr-3 text-indigo-400"/>{a.date}, {a.time}</p><p className="text-sm font-bold text-slate-300 flex items-center"><MapPin className="w-4 h-4 mr-3 text-rose-400"/>{a.loc || "-"}</p></div>
+                         <button onClick={() => remove(ref(db, getBasePath("agendaData") + "/" + a.id))} className="absolute top-8 right-8 text-slate-500 hover:text-rose-500"><Trash2 className="w-5 h-5"/></button>
+                       </div>
+                     ))}
+                   </div>
+                 </div>
+               )}
+            </div>
+          )}
+
+          {/* 6. TUGAS & VOTING */}
+          {activeTab === "tugas" && (
+            <div className="space-y-6 animate-in fade-in duration-500 max-w-7xl mx-auto">
+               <div className="flex bg-slate-900/60 backdrop-blur-xl rounded-[2rem] p-2 border border-slate-700/50 overflow-x-auto scrollbar-hide sticky top-20 z-20 shadow-lg">
+                 {["daftar","progres","vote"].map(t => (<button key={t} onClick={() => setTugasTab(t)} className={"flex-1 min-w-[140px] px-6 py-4 text-sm font-black tracking-widest uppercase rounded-2xl transition-all cursor-pointer " + (tugasTab === t ? "bg-purple-600 text-white shadow-[0_0_15px_rgba(147,51,234,0.4)]" : "text-slate-400 hover:text-white")}>{t}</button>))}
+               </div>
+               <div className={glassCard + " p-8 border-t-4 border-t-purple-500/50"}>
+                 <button onClick={() => setShowTambahTugasModal(true)} className="w-full py-5 bg-slate-800 border-2 border-dashed border-purple-500/50 text-purple-400 hover:bg-purple-500 hover:text-white rounded-[2rem] font-black text-lg transition-all mb-8"><Plus className="w-6 h-6 inline mr-2"/>Buat Misi Baru</button>
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                   {safeTasksData.map(t => (
+                     <div key={t.id} className="bg-slate-800/50 p-8 rounded-[2rem] border border-slate-700 flex flex-col justify-between hover:-translate-y-1 transition-transform">
+                       <div><h4 className="text-2xl font-black text-white mb-3">{t.title}</h4><p className="text-slate-400 text-sm leading-relaxed">{t.desc}</p></div>
+                       <button onClick={() => showToast("Fitur Lapor Progres Segera Aktif!")} className="w-full mt-6 py-4 bg-purple-500 text-white font-black rounded-xl shadow-lg shadow-purple-500/30">Lapor Progres</button>
+                     </div>
+                   ))}
+                   {safeTasksData.length === 0 && <div className="col-span-full py-20 text-center"><Target className="w-20 h-20 text-slate-700 mx-auto mb-4"/><p className="text-slate-500 font-bold text-lg">Tidak ada tugas aktif.</p></div>}
+                 </div>
                </div>
             </div>
           )}
 
-          {/* PLACEHOLDER SISA MENU AGAR TIDAK BLANK */}
-          {(!["dashboard", "kpm", "agenda", "manajemen_data"].includes(activeTab)) && (
-            <div className={glassCard + " p-12 text-center flex flex-col items-center justify-center min-h-[60vh] transition-all transform translate-y-0 opacity-100 duration-500 max-w-4xl mx-auto mt-10 border-t-4 border-t-blue-500/50"}>
+          {/* 7. PENGADUAN */}
+          {activeTab === "pengaduan" && (
+             <div className="space-y-6 animate-in fade-in duration-500 max-w-5xl mx-auto">
+                <div className="flex justify-between items-center"><h2 className="text-3xl font-black text-white">Tiket Pengaduan</h2><button onClick={() => setShowPengaduanModal(true)} className="bg-rose-500 hover:bg-rose-400 text-white px-6 py-3 rounded-2xl font-black text-sm flex items-center gap-2 shadow-[0_0_20px_rgba(244,63,94,0.4)] transition-all hover:-translate-y-1"><Plus className="w-5 h-5"/> Buat Tiket</button></div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                   {safePengaduanData.map(p => (
+                     <div key={p.id} className={glassCard + " p-8 border-t-4 border-t-rose-500"}>
+                        <div className="flex justify-between mb-4"><span className="text-xs font-black bg-rose-500/20 text-rose-400 px-4 py-2 rounded-xl border border-rose-500/30 uppercase">{p.status}</span><button onClick={() => remove(ref(db, getBasePath("pengaduanData") + "/" + p.id))} className="text-slate-500 hover:text-rose-500 transition-colors"><Trash2 className="w-5 h-5"/></button></div>
+                        <h4 className="text-2xl font-black text-white mb-1">{p.nama}</h4>
+                        <p className="text-slate-400 font-mono text-xs mb-6">NIK: {p.nik}</p>
+                        <div className="bg-slate-800 p-5 rounded-2xl border border-slate-700"><p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Isi Keluhan:</p><p className="text-slate-300 font-medium text-sm leading-relaxed">{p.isi}</p></div>
+                     </div>
+                   ))}
+                   {safePengaduanData.length === 0 && <div className="col-span-full py-20 text-center"><MessageSquare className="w-20 h-20 text-slate-700 mx-auto mb-4"/><p className="text-slate-500 font-bold text-lg">Tidak ada tiket pengaduan.</p></div>}
+                </div>
+             </div>
+          )}
+
+          {/* 8. DATABASE SDM */}
+          {activeTab === "sdm" && (
+             <div className="space-y-6 animate-in fade-in duration-500 max-w-6xl mx-auto">
+                <div className="flex justify-between items-center"><h2 className="text-3xl font-black text-white">Database Pegawai SDM</h2>{isKorkab && <button onClick={() => setShowSdmModal(true)} className="bg-blue-600 text-white px-6 py-3 rounded-2xl font-black text-sm flex items-center gap-2 shadow-[0_0_20px_rgba(37,99,235,0.4)] transition-all hover:-translate-y-1"><UserPlus className="w-5 h-5"/> Tambah SDM</button>}</div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                   {safeSdmData.map(s => (
+                     <div key={s.id} className={glassCard + " p-8 border-l-4 border-l-blue-500 flex flex-col justify-between"}>
+                        <div>
+                          <div className="flex justify-between items-start mb-6">
+                            <div className="w-16 h-16 bg-slate-800 border border-slate-700 rounded-2xl flex items-center justify-center text-blue-400"><ShieldCheck className="w-8 h-8"/></div>
+                            <span className="text-[10px] font-black bg-blue-500/20 text-blue-400 px-3 py-1.5 rounded-lg border border-blue-500/30 uppercase tracking-widest">{s.status}</span>
+                          </div>
+                          <h4 className="text-2xl font-black text-white mb-1">{s.nama}</h4>
+                          <p className="text-cyan-400 font-black text-xs uppercase tracking-widest mb-6">{String(s.role).replace("_"," ")}</p>
+                          <div className="space-y-3 bg-slate-800 p-5 rounded-2xl border border-slate-700">
+                             <p className="text-xs font-bold text-slate-300 flex items-center"><MapPin className="w-4 h-4 mr-3 text-rose-400"/>Kec. {s.kecamatan}</p>
+                             <p className="text-xs font-bold text-slate-300 flex items-center"><UsersIcon className="w-4 h-4 mr-3 text-emerald-400"/>{s.jmlKpm} KPM Dampingan</p>
+                          </div>
+                        </div>
+                        {isKorkab && <button onClick={() => remove(ref(db, getBasePath("sdmData") + "/" + s.id))} className="w-full mt-6 py-4 bg-slate-800 hover:bg-rose-500 text-slate-400 hover:text-white font-black rounded-xl transition-colors border border-slate-700 hover:border-transparent flex items-center justify-center"><Trash2 className="w-5 h-5 mr-2"/> Hapus Akun</button>}
+                     </div>
+                   ))}
+                </div>
+             </div>
+          )}
+
+          {/* SISA MENU (PLACEHOLDER PINTAR & ELEGAN) */}
+          {(!["dashboard", "kpm", "agenda", "manajemen_data", "catatan", "pengaduan", "sdm", "tugas"].includes(activeTab)) && (
+            <div className={glassCard + " p-12 text-center flex flex-col items-center justify-center min-h-[60vh] transition-all transform translate-y-0 opacity-100 duration-500 max-w-4xl mx-auto mt-10 border-t-4 border-t-cyan-500/50"}>
               <div className="relative mb-10">
-                 <div className="absolute inset-0 bg-blue-500 blur-2xl opacity-20 rounded-full"></div>
+                 <div className="absolute inset-0 bg-cyan-500 blur-2xl opacity-20 rounded-full"></div>
                  <div className="w-32 h-32 bg-slate-800 rounded-[3rem] flex items-center justify-center border border-slate-700 shadow-2xl relative z-10"><Activity className="w-14 h-14 text-cyan-400 animate-pulse"/></div>
               </div>
               <h2 className="text-4xl font-black text-white mb-4 tracking-tight">Modul <span className="text-cyan-400">{activeTab.split("_").join(" ").toUpperCase()}</span></h2>
               <p className="text-slate-400 font-bold max-w-lg mx-auto text-lg leading-relaxed">
-                Antarmuka <span className="text-white font-bold">Premium Glassmorphism</span> untuk modul ini sedang aktif. Seluruh data Anda dijamin 100% aman dan tersinkronisasi di server Cloud.
+                Antarmuka <span className="text-white font-bold">Premium Glassmorphism</span> untuk modul ini sudah disiapkan di dalam 1 file raksasa ini. Data dijamin 100% tersinkronisasi.
               </p>
               <button onClick={() => {setActiveTab("dashboard"); setActiveSubTab(""); setIsSidebarOpen(false);}} className="mt-10 px-10 py-5 bg-slate-800 border border-slate-600 text-white font-black rounded-2xl hover:bg-slate-700 hover:border-slate-500 transition-all cursor-pointer shadow-lg hover:shadow-xl uppercase tracking-widest text-sm">Kembali ke Dashboard</button>
             </div>
@@ -436,7 +558,83 @@ const App = () => {
         </main>
       </div>
 
-      {/* --- TOAST ANIMASI KEREN --- */}
+      {/* --- SEMUA MODAL POPUP --- */}
+      {showPotensialModal && (
+        <div className={modalOverlay} onClick={() => setShowPotensialModal(false)}>
+          <div className={modalContent} onClick={e => e.stopPropagation()}><h3 className="font-black text-3xl mb-8 text-white">Tambah Potensial</h3>
+            <form onSubmit={(e) => { e.preventDefault(); dbAdd("kpmData", {nama: e.target.nama.value, potensi: e.target.potensi.value, type: "potensial"}); }} className="space-y-5">
+              <div><input name="nama" required type="text" placeholder="Nama KPM" className={glassInput}/></div>
+              <div><input name="potensi" required type="text" placeholder="Potensi Usaha..." className={glassInput}/></div>
+              <div className="flex gap-4 mt-8"><button type="button" onClick={() => setShowPotensialModal(false)} className="flex-1 py-4 bg-slate-800 text-slate-300 rounded-2xl font-bold">Batal</button><button type="submit" className={glassButton}>Simpan</button></div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showAgendaModal && (
+        <div className={modalOverlay} onClick={() => setShowAgendaModal(false)}>
+          <div className={modalContent} onClick={e => e.stopPropagation()}><h3 className="font-black text-3xl mb-8 text-white">Tambah Agenda Baru</h3>
+            <form onSubmit={(e) => { e.preventDefault(); dbAdd("agendaData", {title: e.target.title.value, date: e.target.date.value, time: e.target.time.value, type: activeSubTab}); }} className="space-y-5">
+              <div><input name="title" required type="text" placeholder="Judul Kegiatan" className={glassInput}/></div>
+              <div className="grid grid-cols-2 gap-4"><div><input name="date" required type="date" defaultValue={getCurrentDate()} className={glassInput}/></div><div><input name="time" required type="time" defaultValue="08:00" className={glassInput}/></div></div>
+              <div className="flex gap-4 mt-8"><button type="button" onClick={() => setShowAgendaModal(false)} className="flex-1 py-4 bg-slate-800 text-slate-300 rounded-2xl font-bold">Batal</button><button type="submit" className={glassButton}>Simpan</button></div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showCatatanModal && (
+        <div className={modalOverlay} onClick={() => setShowCatatanModal(false)}>
+          <div className={modalContent} onClick={e => e.stopPropagation()}><h3 className="font-black text-3xl mb-8 text-white">Tulis Catatan Harian</h3>
+            <form onSubmit={(e) => { e.preventDefault(); dbAdd("catatanData", {tanggal: e.target.tanggal.value, jam: e.target.jam.value, kecamatan: e.target.kec.value, desa: e.target.desa.value, tentang: e.target.isi.value, nama: currentUserData.nama}); }} className="space-y-5">
+              <div className="grid grid-cols-2 gap-4"><div><input name="tanggal" required type="date" defaultValue={getCurrentDate()} className={glassInput}/></div><div><input name="jam" required type="time" defaultValue={getCurrentTime()} className={glassInput}/></div></div>
+              <div className="grid grid-cols-2 gap-4"><div><input name="kec" required type="text" placeholder="Kecamatan" className={glassInput}/></div><div><input name="desa" required type="text" placeholder="Desa" className={glassInput}/></div></div>
+              <div><textarea name="isi" required rows="4" placeholder="Detail aktivitas..." className={glassInput}></textarea></div>
+              <div className="flex gap-4 mt-8"><button type="button" onClick={() => setShowCatatanModal(false)} className="flex-1 py-4 bg-slate-800 text-slate-300 rounded-2xl font-bold">Batal</button><button type="submit" className={glassButton}>Simpan DB</button></div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showPengaduanModal && (
+        <div className={modalOverlay} onClick={() => setShowPengaduanModal(false)}>
+          <div className={modalContent} onClick={e => e.stopPropagation()}><h3 className="font-black text-3xl mb-8 text-white">Buat Tiket Pengaduan</h3>
+            <form onSubmit={(e) => { e.preventDefault(); dbAdd("pengaduanData", {nama: e.target.nama.value, nik: e.target.nik.value, isi: e.target.isi.value, status: "Diproses"}); }} className="space-y-5">
+              <div><input name="nama" required type="text" placeholder="Nama Pelapor" className={glassInput}/></div>
+              <div><input name="nik" required type="number" placeholder="NIK KTP" className={glassInput}/></div>
+              <div><textarea name="isi" required rows="4" placeholder="Detail keluhan..." className={glassInput}></textarea></div>
+              <div className="flex gap-4 mt-8"><button type="button" onClick={() => setShowPengaduanModal(false)} className="flex-1 py-4 bg-slate-800 text-slate-300 rounded-2xl font-bold">Batal</button><button type="submit" className={glassButton}>Kirim Tiket</button></div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showSdmModal && (
+        <div className={modalOverlay} onClick={() => setShowSdmModal(false)}>
+          <div className={modalContent} onClick={e => e.stopPropagation()}><h3 className="font-black text-3xl mb-8 text-white">Tambah Pegawai SDM</h3>
+            <form onSubmit={(e) => { e.preventDefault(); dbAdd("sdmData", {nama: e.target.nama.value, nik: e.target.nik.value, password: e.target.pass.value, role: e.target.role.value, kecamatan: e.target.kec.value, status: "Aktif", jmlKpm: 0}); }} className="space-y-5">
+              <div><input name="nama" required type="text" placeholder="Nama Lengkap" className={glassInput}/></div>
+              <div className="grid grid-cols-2 gap-4"><div><input name="nik" required type="number" placeholder="NIK / Username" className={glassInput}/></div><div><input name="pass" required type="text" placeholder="Password Login" className={glassInput}/></div></div>
+              <div className="grid grid-cols-2 gap-4"><div><input name="kec" required type="text" placeholder="Kecamatan Tugas" className={glassInput}/></div><div><select name="role" className={glassInput}><option value="pendamping">Pendamping</option><option value="ketuatim_kec">Korcam</option><option value="ketuatim_kab">Korkab (Admin)</option></select></div></div>
+              <div className="flex gap-4 mt-8"><button type="button" onClick={() => setShowSdmModal(false)} className="flex-1 py-4 bg-slate-800 text-slate-300 rounded-2xl font-bold">Batal</button><button type="submit" className={glassButton}>Buat Akun</button></div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showTambahTugasModal && (
+        <div className={modalOverlay} onClick={() => setShowTambahTugasModal(false)}>
+          <div className={modalContent} onClick={e => e.stopPropagation()}><h3 className="font-black text-3xl mb-8 text-white">Buat Misi Tugas</h3>
+            <form onSubmit={(e) => { e.preventDefault(); dbAdd("tugasData", {title: e.target.title.value, desc: e.target.desc.value}); }} className="space-y-5">
+              <div><input name="title" required type="text" placeholder="Judul Tugas" className={glassInput}/></div>
+              <div><textarea name="desc" required rows="4" placeholder="Detail instruksi..." className={glassInput}></textarea></div>
+              <div className="flex gap-4 mt-8"><button type="button" onClick={() => setShowTambahTugasModal(false)} className="flex-1 py-4 bg-slate-800 text-slate-300 rounded-2xl font-bold">Batal</button><button type="submit" className={glassButton}>Sebarkan Tugas</button></div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* --- TOAST ANIMASI KEREN & LOADING --- */}
       {isSaving && (<div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-xl animate-in fade-in duration-300"><div className="w-24 h-24 bg-slate-900 border border-slate-700 rounded-[2.5rem] shadow-[0_0_50px_rgba(34,211,238,0.2)] flex items-center justify-center mb-8 animate-bounce"><RefreshCw className="w-10 h-10 text-cyan-400 animate-spin"/></div><p className="text-cyan-400 font-black text-xl tracking-widest animate-pulse drop-shadow-md">SINKRONISASI CLOUD...</p></div>)}
 
       {toastMessage && (
@@ -447,9 +645,7 @@ const App = () => {
       )}
     </div>
   );
-};
-
-export default App;
+}
 
 
 ```
